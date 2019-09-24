@@ -1,6 +1,6 @@
-[submodule "songs/duhovne_pjesme_novi_sad_1966_001"]
-	path = songs/duhovne_pjesme_novi_sad_1966_001
+[submodule "songs/001"]
+	path = songs/001
 	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_001
-[submodule "songs/songs/duhovne_pjesme_novi_sad_1966_002"]
-	path = songs/songs/duhovne_pjesme_novi_sad_1966_002
-	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_002.git
+[submodule "songs/002"]
+	path = songs/002
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_002
