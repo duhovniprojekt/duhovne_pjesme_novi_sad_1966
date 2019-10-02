@@ -7,3 +7,30 @@
 [submodule "songs/003"]
 	path = songs/003
 	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_003
+[submodule "songs/004"]
+	path = songs/004
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_004
+[submodule "songs/005"]
+	path = songs/005
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_005
+[submodule "songs/006"]
+	path = songs/006
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_006
+[submodule "songs/007"]
+	path = songs/007
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_007
+[submodule "songs/008"]
+	path = songs/008
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_008
+[submodule "songs/009"]
+	path = songs/009
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_009
+[submodule "songs/010"]
+	path = songs/010
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_010
+[submodule "songs/011"]
+	path = songs/011
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_011
+[submodule "songs/011a"]
+	path = songs/011a
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_011a
