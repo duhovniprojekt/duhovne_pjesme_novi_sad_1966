@@ -34,3 +34,21 @@
 [submodule "songs/011a"]
 	path = songs/011a
 	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_011a
+[submodule "songs/012"]
+	path = songs/012
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_012
+[submodule "songs/013"]
+	path = songs/013
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_013
+[submodule "songs/014"]
+	path = songs/014
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_014
+[submodule "songs/015"]
+	path = songs/015
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_015
+[submodule "songs/016"]
+	path = songs/016
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_016
+[submodule "songs/017"]
+	path = songs/017
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_017
