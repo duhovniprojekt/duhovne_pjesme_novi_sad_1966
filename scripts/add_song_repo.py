@@ -74,6 +74,9 @@ if __name__ == "__main__":
     num = sys.argv[1]
     file_name = sys.argv[2]
 
+    print("https://github.com/organizations/duhovniprojekt/repositories/new")
+    print("duhovne_pjesme_novi_sad_1966_" + get_padded_num(num))
+    input("Press Enter to continue:")
     add_submodule(num)
     add_dir(num)
     move_file(num, file_name)
