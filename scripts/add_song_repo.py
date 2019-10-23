@@ -74,11 +74,24 @@ if __name__ == "__main__":
     num = sys.argv[1]
     file_name = sys.argv[2]
 
+    print("ACTION: add_submodule")
     print("https://github.com/organizations/duhovniprojekt/repositories/new")
     print("duhovne_pjesme_novi_sad_1966_" + get_padded_num(num))
     input("Press Enter to continue:")
     add_submodule(num)
+    
+    print("ACTION: add_dir")
+    input("Press Enter to continue:")
     add_dir(num)
+    
+    print("ACTION: move_file")
+    input("Press Enter to continue:")
     move_file(num, file_name)
+    
+    print("ACTION: git_commit_song")
+    input("Press Enter to continue:")
     git_commit_song(num, "added unclean version")
+    
+    print("ACTION: git_commit_repo")
+    input("Press Enter to continue:")
     git_commit_repo("added repo " + get_padded_num(num))
