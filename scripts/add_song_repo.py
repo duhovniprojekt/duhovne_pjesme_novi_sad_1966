@@ -4,7 +4,9 @@ import subprocess
 import sys
 
 # Usage:
-# Run this script from root of the project
+# Run this script from root of the repo
+# Example:
+# ./scripts/add_song_repo.py 24 ~/Downloads/24.mscz
 
 # git submodule add https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_019 songs/019
 # mkdir -p songs/019/musescore/
