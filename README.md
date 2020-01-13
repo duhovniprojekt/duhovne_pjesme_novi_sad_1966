@@ -3,6 +3,7 @@
 ## Clone this repository and its submodules
 
 ```git clone https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966.git```
+
 ```git submodule update --init --recursive```
 
 or with a single command
