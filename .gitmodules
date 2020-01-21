@@ -520,3 +520,6 @@
 [submodule "songs/149a"]
 	path = songs/149a
 	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_149a
+[submodule "songs/164"]
+	path = songs/164
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_164
