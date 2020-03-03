@@ -111,7 +111,8 @@ class MuseScoreParser(XmlParser):
         "measureSpanner" : "/museScore/Score/Staff/Measure/voice/Spanner",
         "chordSpanner" : "/museScore/Score/Staff/Measure/voice/Chord/Spanner",
         "noteSpanner" : "/museScore/Score/Staff/Measure/voice/Chord/Note/Spanner",
-        "layoutBreak" : "/museScore/Score/Staff/Measure/LayoutBreak"
+        "layoutBreak" : "/museScore/Score/Staff/Measure/LayoutBreak",
+        "lyrics" : "/museScore/Score/Staff/Measure/voice/Chord/Lyrics"
     }
     measure = 0
 
@@ -179,6 +180,9 @@ class MuseScoreParser(XmlParser):
 
     def onBarLine(self, text):
         print("%% barLine:", text)
+
+    def onLyrics(self, no, text, syllabic):
+        print("%% lyrics:", no, text, syllabic)
 
     def parseElement(self, node):
         # if you got all data from node and don't want to make a recursion on that node return True
@@ -284,6 +288,15 @@ class MuseScoreParser(XmlParser):
         if (self.getPath() == self.xml_paths['layoutBreak']):
             text = self.getTextFromChild(node, "subtype")
             self.onLayoutBreak(text)
+            return False
+        
+        if (self.getPath() == self.xml_paths['lyrics']):
+            text = self.getTextFromChild(node, "text")
+            syllabic = self.getTextFromChild(node, "syllabic")
+            no = self.getTextFromChild(node, "no")
+            if no == "": no = "0"
+            if (text.strip()):
+                self.onLyrics(str(no), text, str(syllabic))
             return False
 
         return False
@@ -476,6 +489,24 @@ class TypeLayoutBreak():
     def getBreak(self):
         return "\\break"
 
+class TypeLyrics():
+    def __init__(self, no, text, syllabic):
+        self.no = no
+        self.text = text
+        self.syllabic = syllabic
+
+    def getNo(self):
+        return self.no
+
+    def getText(self):
+        return self.text
+
+    def hasSyllabic(self):
+        return self.syllabic in ["begin", "middle"]
+
+    def getSyllabic(self):
+        return "--"
+
 class LilypondGenerator(MuseScoreParser):
 
     staff = {}
@@ -483,6 +514,13 @@ class LilypondGenerator(MuseScoreParser):
     lastTypeTimeSignature = None
     lastTypeVolta = None
     addOnMeasureExit = []
+    nameIteration = {
+        '0' : "Zero",
+        '1' : "One",
+        '2' : "Two",
+        '3' : "Three",
+        '4' : "Four",
+    }
 
     def onMeasure(self):
         self.measure += 1
@@ -576,6 +614,10 @@ class LilypondGenerator(MuseScoreParser):
     def onLayoutBreak(self, text):
         print("%% layout:", text)
         self.addOnMeasureExit.append(TypeLayoutBreak(text))
+    
+    def onLyrics(self, no, text, syllabic):
+        print("%% lyrics:", no, text, syllabic)
+        self.staff[self.currentStaffId].append(TypeLyrics(no, text, syllabic))
 
     def getHead(self):
         string = []
@@ -599,7 +641,7 @@ class LilypondGenerator(MuseScoreParser):
 
     def getStaffStart(self, id):
         string = []
-        string.append("staffOne = \\relative c' {") #TODO: % str(id))
+        string.append("staff%s = \\relative c' {" % self.nameIteration[id])
         return string
 
     def getStaffEnd(self):
@@ -652,6 +694,34 @@ class LilypondGenerator(MuseScoreParser):
                 line = "  "
         return string        
 
+    def getLyricStart(self, id, no):
+        string = []
+        string.append("lyric%s%s = \\lyricmode {" % (self.nameIteration[id], self.nameIteration[no]))
+        return string
+
+    def getLyricEnd(self):
+        string = []
+        string.append("}")
+        return string 
+
+    def getLyricData(self, id, no):
+        string = []
+        line = "  "
+        for element in self.staff[id]:
+            if isinstance(element, TypeLyrics):
+                if (element.getNo() == no):
+                    line += element.getText()
+                    line += " "
+                    if (element.hasSyllabic()):
+                        line += element.getSyllabic()
+                        line += " "
+            if any(symbol in line for symbol in [".", ",", "!", "?", ":"]):
+                string.append(line)
+                line = "  "
+        if (line != "  "):
+            string.append(line)
+        return string
+
     def getScore(self):
         string = []
         string.append("\score {")
@@ -677,6 +747,11 @@ class LilypondGenerator(MuseScoreParser):
         string += self.getStaffData('1')
         string += self.getStaffEnd()
         string.append("")
+        for no in range(4):
+            string += self.getLyricStart('1', str(no))
+            string += self.getLyricData('1', str(no))
+            string += self.getLyricEnd()
+            string.append("")
         string += self.getScore()
         return(string)
 
