@@ -377,9 +377,9 @@ class TypeRest(TypeDuration):
         if (duration == "measure"):
             if (lastTypeTimeSignature):
                 d, n = lastTypeTimeSignature.getTime()
-                self.rest = 'R%s*%s' % (n, d)
+                self.rest = 'r%s*%s' % (n, d)
             else:
-                self.rest = 'R1'
+                self.rest = 'r1'
         else:
             if (dots):
                 dots = int(dots) * "."
@@ -428,30 +428,56 @@ class TypeNote(TypeDuration):
         '33' : 'hisis'
     }
 
-    def __init__(self, lastPitch, pitch, tpc, duration, dots):
+    def __init__(self, lastPitch, pitch, lastTpc, tpc, duration, dots):
         self.line = ""
         self.line += self.parserTpc[tpc]
         self.pitch = pitch
         pitchDiff = int(pitch) - int(lastPitch)
-        print("%% pitchDiff %s, lastPitch %s, pitch %s" % (pitchDiff, lastPitch, pitch))
+        tpcDiff = int(tpc) - int(lastTpc)
+        print("%% pitchDiff %s, lastPitch %s, pitch %s, tpcDiff %s" % (pitchDiff, lastPitch, pitch, tpcDiff))
+        #TODO: clean up this mess
         if (pitchDiff >= 6 and pitchDiff < 18):
-            print("%% pitchDiff >")
-            self.line += "'"
+            if (pitchDiff == 6 and tpcDiff == 6):
+                print("%% pitchDiff > but exception")
+                self.line += ""
+            else:
+                print("%% pitchDiff >")
+                self.line += "'"
         elif (pitchDiff >= 18 and pitchDiff < 30):
-            print("%% pitchDiff >>")
-            self.line += "''"
+            if (pitchDiff == 18 and tpcDiff == 6):
+                print("%% pitchDiff >> but exception")
+                self.line += "'"
+            else:
+                print("%% pitchDiff >>")
+                self.line += "''"
         elif (pitchDiff >= 30):
-            print("%% pitchDiff >>>")
-            self.line += "'''"
+            if (pitchDiff == 30 and tpcDiff == 6):
+                print("%% pitchDiff >>> but exception")
+                self.line += "''"
+            else:
+                print("%% pitchDiff >>>")
+                self.line += "'''"
         elif (pitchDiff <= -6 and pitchDiff > -18):
-            print("%% pitchDiff <")
-            self.line += ","
+            if (pitchDiff == -6 and tpcDiff == -6):
+                print("%% pitchDiff < but exception")
+                self.line += ""
+            else:
+                print("%% pitchDiff <")
+                self.line += ","
         elif (pitchDiff <= -18 and pitchDiff > -30):
-            print("%% pitchDiff <<")
-            self.line += ",,"
+            if (pitchDiff == -18 and tpcDiff == -6):
+                print("%% pitchDiff << but exception")
+                self.line += ","
+            else:
+                print("%% pitchDiff <<")
+                self.line += ",,"
         elif (pitchDiff <= -30):
-            print("%% pitchDiff <<<")
-            self.line += ",,,"
+            if (pitchDiff == -30 and tpcDiff == -6):
+                print("%% pitchDiff <<< but exception")
+                self.line += ",,"
+            else:
+                print("%% pitchDiff <<<")
+                self.line += ",,,"
         self.line += self.parserDuration[duration]
         if (dots):
             self.line += int(dots) * "."
@@ -546,7 +572,7 @@ class TypeLyrics():
 
 class TypeClef():
     types = {
-        "G8vb" : "bass",
+        "G8vb" : "tenorG",
         "F" : "bass",
         '' : "treble"
     }
@@ -560,6 +586,7 @@ class LilypondGenerator(MuseScoreParser):
 
     staff = {}
     lastPitch = 60
+    lastTpc = 14
     lastTypeTimeSignature = None
     lastTypeVolta = None
     addOnMeasureExit = []
@@ -586,8 +613,9 @@ class LilypondGenerator(MuseScoreParser):
 
     def onNote(self, pitch, tpc, duration, dots):
         print("%% chord:", pitch, tpc, duration, dots)
-        typeNote = TypeNote(self.lastPitch, pitch, tpc, duration, dots)
-        self.lastPitch = typeNote.getPitch()
+        typeNote = TypeNote(self.lastPitch, pitch, self.lastTpc, tpc, duration, dots)
+        self.lastPitch = pitch
+        self.lastTpc = tpc
         self.staff[self.currentStaffId].append(typeNote)
 
     def onKeySignature(self, keySignature):
@@ -655,6 +683,7 @@ class LilypondGenerator(MuseScoreParser):
         print("%% staff:", id)
         self.measure = 0
         self.lastPitch = 60
+        self.lastTpc = 14
         if (not id in self.staff):
             self.staff[id] = []
         self.currentStaffId = id
@@ -710,7 +739,7 @@ class LilypondGenerator(MuseScoreParser):
 
     def getStaffEnd(self):
         string = []
-        string.append("  \\bar \"|.\"") #TODO: what if there is no end?
+        # string.append("  \\bar \"|.\"") #TODO: what if there is no end?
         string.append("}")
         return string              
 
@@ -790,24 +819,37 @@ class LilypondGenerator(MuseScoreParser):
 
     def getScore(self):
         string = []
-        string.append("\score {")
-        string.append("  <<")
-        string.append("  \\new Staff {")
-        string.append("    \\staff%s" % self.nameIteration['1'])
-        string.append("  }")
-        string.append("  \\new Staff {")
-        string.append("    \\staff%s" % self.nameIteration['2'])
-        string.append("  }")
-        string.append("  \\new Staff {")
-        string.append("    \\staff%s" % self.nameIteration['3'])
-        string.append("  }")
-        string.append("  \\new Staff {")
-        string.append("    \\staff%s" % self.nameIteration['4'])
-        string.append("  }")
-        string.append("  \\new Staff {")
-        string.append("    \\staff%s" % self.nameIteration['5'])
-        string.append("  }")
-        string.append(">>")
+        string.append("\\score {")
+        string.append("    <<")
+        string.append("    %lead start")
+        string.append("    <<")
+        string.append("    \\new Staff {")
+        string.append("        \\new Voice = \"lead\" { \\staffOne }")
+        string.append("    }")
+        string.append("    \\new Lyrics \\lyricsto \"lead\" { \\lyricOneZero }")
+        string.append("    >>")
+        string.append("    %lead end")
+        string.append("    %choir start")
+        string.append("    \\new ChoirStaff {")
+        string.append("        <<")
+        string.append("        \\new Staff \with { \consists \"Merge_rests_engraver\" } {")
+        string.append("            <<")
+        string.append("            \\new Voice = \"sopran\" { \\voiceOne \\staffTwo }")
+        string.append("            \\new Voice = \"alt\" { \\voiceTwo \\staffThree }")
+        string.append("            \\new NullVoice = \"lead\" { \\staffOne }")
+        string.append("            \\new Lyrics \\lyricsto \"lead\" { \\lyricOneZero }")
+        string.append("            >>")
+        string.append("        }")
+        string.append("        \\new Staff \with { \consists \"Merge_rests_engraver\" } {")
+        string.append("            <<")
+        string.append("            \\new Voice = \"tenor\" { \\voiceOne \\staffFour }")
+        string.append("            \\new Voice = \"bass\" { \\voiceTwo \\staffFive }")
+        string.append("            >>")
+        string.append("        }")
+        string.append("        >>")
+        string.append("    }")
+        string.append("    %choir end")
+        string.append("    >>")
         string.append("}")
         return(string)
 
