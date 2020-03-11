@@ -112,7 +112,9 @@ class MuseScoreParser(XmlParser):
         "chordSpanner" : "/museScore/Score/Staff/Measure/voice/Chord/Spanner",
         "noteSpanner" : "/museScore/Score/Staff/Measure/voice/Chord/Note/Spanner",
         "layoutBreak" : "/museScore/Score/Staff/Measure/LayoutBreak",
-        "lyrics" : "/museScore/Score/Staff/Measure/voice/Chord/Lyrics"
+        "lyrics" : "/museScore/Score/Staff/Measure/voice/Chord/Lyrics",
+        "clef" : "/museScore/Score/Staff/Measure/voice/Clef",
+        "partStaff" : "/museScore/Score/Part/Staff"
     }
     measure = 0
 
@@ -184,6 +186,12 @@ class MuseScoreParser(XmlParser):
     def onLyrics(self, no, text, syllabic):
         print("%% lyrics:", no, text, syllabic)
 
+    def onClef(self, type):
+        print("%% clef:", type)
+
+    def onPartStaffEnter(self, id, defaultClef):
+        print("%% defaultClef:", defaultClef)
+
     def parseElement(self, node):
         # if you got all data from node and don't want to make a recursion on that node return True
         if (self.getPath() == self.xml_paths['measure']):
@@ -211,6 +219,11 @@ class MuseScoreParser(XmlParser):
         if (self.getPath() == self.xml_paths['keySignature']):
             keySignature = self.getTextFromChild(node, "accidental")
             self.onKeySignature(keySignature)
+            return False
+
+        if (self.getPath() == self.xml_paths['clef']):
+            clefType = self.getTextFromChild(node, "concertClefType")
+            self.onClef(clefType)
             return False
 
         if (self.getPath() == self.xml_paths['timeSignature']):
@@ -297,6 +310,14 @@ class MuseScoreParser(XmlParser):
             if no == "": no = "0"
             if (text.strip()):
                 self.onLyrics(str(no), text, str(syllabic))
+            return False
+
+        if (self.getPath() == self.xml_paths['partStaff']):
+            for attr in self.getAttributes(node):
+                if (attr[0] == 'id'):
+                    id = attr[1]
+                    defaultClef = self.getTextFromChild(node, "defaultClef")
+                    self.onPartStaffEnter(id, defaultClef)
             return False
 
         return False
@@ -411,10 +432,26 @@ class TypeNote(TypeDuration):
         self.line = ""
         self.line += self.parserTpc[tpc]
         self.pitch = pitch
-        if (int(lastPitch) - int(pitch) > 6): #TODO: which number for octave
-            self.line += ","
-        elif (int(lastPitch) - int(pitch) < -6): #TODO: -5???
+        pitchDiff = int(pitch) - int(lastPitch)
+        print("%% pitchDiff %s, lastPitch %s, pitch %s" % (pitchDiff, lastPitch, pitch))
+        if (pitchDiff >= 6 and pitchDiff < 18):
+            print("%% pitchDiff >")
             self.line += "'"
+        elif (pitchDiff >= 18 and pitchDiff < 30):
+            print("%% pitchDiff >>")
+            self.line += "''"
+        elif (pitchDiff >= 30):
+            print("%% pitchDiff >>>")
+            self.line += "'''"
+        elif (pitchDiff <= -6 and pitchDiff > -18):
+            print("%% pitchDiff <")
+            self.line += ","
+        elif (pitchDiff <= -18 and pitchDiff > -30):
+            print("%% pitchDiff <<")
+            self.line += ",,"
+        elif (pitchDiff <= -30):
+            print("%% pitchDiff <<<")
+            self.line += ",,,"
         self.line += self.parserDuration[duration]
         if (dots):
             self.line += int(dots) * "."
@@ -507,6 +544,18 @@ class TypeLyrics():
     def getSyllabic(self):
         return "--"
 
+class TypeClef():
+    types = {
+        "G8vb" : "bass",
+        "F" : "bass",
+        '' : "treble"
+    }
+    def __init__(self, type): 
+        self.type = type
+
+    def getType(self):
+        return "\\clef %s" % self.types[self.type]
+
 class LilypondGenerator(MuseScoreParser):
 
     staff = {}
@@ -520,6 +569,7 @@ class LilypondGenerator(MuseScoreParser):
         '2' : "Two",
         '3' : "Three",
         '4' : "Four",
+        '5' : "Five",
     }
 
     def onMeasure(self):
@@ -582,7 +632,8 @@ class LilypondGenerator(MuseScoreParser):
     def onVoltaEnd(self):
         print("%% voltaEnd")
         # self.addOnMeasureExit.append(TypeVolta('end', "", self.lastTypeVolta.getEnd()))
-        self.staff[self.currentStaffId].append(TypeVolta('end', "", self.lastTypeVolta.getEnd()))
+        # self.staff[self.currentStaffId].append(TypeVolta('end', "", self.lastTypeVolta.getEnd()))
+        self.staff[self.currentStaffId].append(TypeVolta('end', "", None))
         self.lastTypeVolta = None
 
     def onTieStart(self):
@@ -602,7 +653,10 @@ class LilypondGenerator(MuseScoreParser):
 
     def onStaffEnter(self, id):
         print("%% staff:", id)
-        self.staff[id] = []
+        self.measure = 0
+        self.lastPitch = 60
+        if (not id in self.staff):
+            self.staff[id] = []
         self.currentStaffId = id
 
     def onMeasureExit(self):
@@ -618,6 +672,16 @@ class LilypondGenerator(MuseScoreParser):
     def onLyrics(self, no, text, syllabic):
         print("%% lyrics:", no, text, syllabic)
         self.staff[self.currentStaffId].append(TypeLyrics(no, text, syllabic))
+
+    def onClef(self, type):
+        print("%% clef:", type)
+        self.staff[self.currentStaffId].append(TypeClef(type))
+
+    def onPartStaffEnter(self, id, defaultClef):
+        print("%% defaultClef:", defaultClef)
+        if (not id in self.staff):
+            self.staff[id] = []
+        self.staff[id].append(TypeClef(defaultClef))
 
     def getHead(self):
         string = []
@@ -692,6 +756,8 @@ class LilypondGenerator(MuseScoreParser):
                 line += "|"
                 string.append(line)
                 line = "  "
+            elif isinstance(element, TypeClef):
+                string.append("  %s" % element.getType())
         return string        
 
     def getLyricStart(self, id, no):
@@ -727,11 +793,19 @@ class LilypondGenerator(MuseScoreParser):
         string.append("\score {")
         string.append("  <<")
         string.append("  \\new Staff {")
-        string.append("    \\staffOne")
+        string.append("    \\staff%s" % self.nameIteration['1'])
         string.append("  }")
-        string.append("  \\new TabStaff {")
-        string.append("    \\set Staff.stringTunings = \\stringTuning <e a d\' g\'>")
-        string.append("    \\staffOne")
+        string.append("  \\new Staff {")
+        string.append("    \\staff%s" % self.nameIteration['2'])
+        string.append("  }")
+        string.append("  \\new Staff {")
+        string.append("    \\staff%s" % self.nameIteration['3'])
+        string.append("  }")
+        string.append("  \\new Staff {")
+        string.append("    \\staff%s" % self.nameIteration['4'])
+        string.append("  }")
+        string.append("  \\new Staff {")
+        string.append("    \\staff%s" % self.nameIteration['5'])
         string.append("  }")
         string.append(">>")
         string.append("}")
@@ -743,13 +817,14 @@ class LilypondGenerator(MuseScoreParser):
         string.append("")
         string += self.getHeader()
         string.append("")
-        string += self.getStaffStart('1')
-        string += self.getStaffData('1')
-        string += self.getStaffEnd()
-        string.append("")
-        for no in range(4):
-            string += self.getLyricStart('1', str(no))
-            string += self.getLyricData('1', str(no))
+        for i in range(1, 6):
+            string += self.getStaffStart(str(i))
+            string += self.getStaffData(str(i))
+            string += self.getStaffEnd()
+            string.append("")
+        for i in range(1, 6):
+            string += self.getLyricStart(str(i), str(0))
+            string += self.getLyricData(str(i), str(0))
             string += self.getLyricEnd()
             string.append("")
         string += self.getScore()
