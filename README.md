@@ -29,3 +29,11 @@ In the root of the project run:
 - commit
 - return to the root of the project
 - commit new submodule changes
+
+## Edit a song (submodule)
+
+Before you edit a song checkout to master branch using these command sequence:
+- `cd songs/001`
+- `git checkout master`
+- `git pull`
+so you wont have errors like `git push origin HEAD:<name-of-remote-branch>`
