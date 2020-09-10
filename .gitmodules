@@ -28,6 +28,9 @@
 [submodule "songs/010"]
 	path = songs/010
 	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_010
+[submodule "songs/010a"]
+	path = songs/010a
+	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_010a
 [submodule "songs/011"]
 	path = songs/011
 	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_011
@@ -586,6 +589,3 @@
 [submodule "songs/179a"]
 	path = songs/179a
 	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_179a
-[submodule "songs/010a"]
-	path = songs/010a
-	url = https://github.com/duhovniprojekt/duhovne_pjesme_novi_sad_1966_010a
