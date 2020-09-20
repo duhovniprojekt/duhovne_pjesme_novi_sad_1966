@@ -114,7 +114,8 @@ class MuseScoreParser(XmlParser):
         "layoutBreak" : "/museScore/Score/Staff/Measure/LayoutBreak",
         "lyrics" : "/museScore/Score/Staff/Measure/voice/Chord/Lyrics",
         "clef" : "/museScore/Score/Staff/Measure/voice/Clef",
-        "partStaff" : "/museScore/Score/Part/Staff"
+        "partStaff" : "/museScore/Score/Part/Staff",
+        "harmony" : "/museScore/Score/Staff/Measure/voice/Harmony"
     }
     measure = 0
 
@@ -191,6 +192,9 @@ class MuseScoreParser(XmlParser):
 
     def onPartStaffEnter(self, id, defaultClef):
         print("%% defaultClef:", defaultClef)
+
+    def onHarmony(self, root, name, base):
+        print("%% harmony:", root, name, base)
 
     def parseElement(self, node):
         # if you got all data from node and don't want to make a recursion on that node return True
@@ -320,6 +324,13 @@ class MuseScoreParser(XmlParser):
                     self.onPartStaffEnter(id, defaultClef)
             return False
 
+        if (self.getPath() == self.xml_paths['harmony']):
+            root = self.getTextFromChild(node, "root")
+            name = self.getTextFromChild(node, "name")
+            base = self.getTextFromChild(node, "base")
+            self.onHarmony(root ,name , base)
+            return False
+
         return False
 
     def onMeasureExit(self):
@@ -434,7 +445,7 @@ class TypeNote(TypeDuration):
         self.pitch = pitch
         pitchDiff = int(pitch) - int(lastPitch)
         tpcDiff = int(tpc) - int(lastTpc)
-        print("%% pitchDiff %s, lastPitch %s, pitch %s, tpcDiff %s" % (pitchDiff, lastPitch, pitch, tpcDiff))
+        print("%%%% pitchDiff %s, lastPitch %s, pitch %s, tpcDiff %s" % (pitchDiff, lastPitch, pitch, tpcDiff))
         #TODO: clean up this mess
         if (pitchDiff >= 6 and pitchDiff < 18):
             if (pitchDiff == 6 and tpcDiff == 6):
@@ -712,6 +723,9 @@ class LilypondGenerator(MuseScoreParser):
             self.staff[id] = []
         self.staff[id].append(TypeClef(defaultClef))
 
+    def onHarmony(self, root, name, base):
+        print("%% onHarmony:", root, name, base)
+
     def getHead(self):
         string = []
         string.append("\\version \"2.19.84\"")
@@ -817,38 +831,23 @@ class LilypondGenerator(MuseScoreParser):
             string.append(line)
         return string
 
+    def getChords(self):
+        string = []
+        string.append("harme = \chordmode  {")
+        string.append("}")
+        return(string)
+
     def getScore(self):
         string = []
         string.append("\\score {")
         string.append("    <<")
-        string.append("    %lead start")
-        string.append("    <<")
+        string.append("    \\new ChordNames \\harme")
         string.append("    \\new Staff {")
         string.append("        \\new Voice = \"lead\" { \\staffOne }")
         string.append("    }")
-        string.append("    \\new Lyrics \\lyricsto \"lead\" { \\lyricOneZero }")
-        string.append("    >>")
-        string.append("    %lead end")
-        string.append("    %choir start")
-        string.append("    \\new ChoirStaff {")
-        string.append("        <<")
-        string.append("        \\new Staff \with { \consists \"Merge_rests_engraver\" } {")
-        string.append("            <<")
-        string.append("            \\new Voice = \"sopran\" { \\voiceOne \\staffTwo }")
-        string.append("            \\new Voice = \"alt\" { \\voiceTwo \\staffThree }")
-        string.append("            \\new NullVoice = \"lead\" { \\staffOne }")
-        string.append("            \\new Lyrics \\lyricsto \"lead\" { \\lyricOneZero }")
-        string.append("            >>")
-        string.append("        }")
-        string.append("        \\new Staff \with { \consists \"Merge_rests_engraver\" } {")
-        string.append("            <<")
-        string.append("            \\new Voice = \"tenor\" { \\voiceOne \\staffFour }")
-        string.append("            \\new Voice = \"bass\" { \\voiceTwo \\staffFive }")
-        string.append("            >>")
-        string.append("        }")
-        string.append("        >>")
-        string.append("    }")
-        string.append("    %choir end")
+        for i in range(0, 6):
+            if (self.getLyricData(str(1), str(i))):
+                string.append("    \\new Lyrics \\lyricsto \"lead\" { \\lyric%s%s }" % (self.nameIteration["1"], self.nameIteration[str(i)]))
         string.append("    >>")
         string.append("}")
         return(string)
@@ -864,11 +863,14 @@ class LilypondGenerator(MuseScoreParser):
             string += self.getStaffData(str(i))
             string += self.getStaffEnd()
             string.append("")
-        for i in range(1, 6):
-            string += self.getLyricStart(str(i), str(0))
-            string += self.getLyricData(str(i), str(0))
-            string += self.getLyricEnd()
-            string.append("")
+        for i in range(0, 6):
+            if (self.getLyricData(str(1), str(i))):
+                string += self.getLyricStart(str(1), str(i))
+                string += self.getLyricData(str(1), str(i))
+                string += self.getLyricEnd()
+                string.append("")
+        string += self.getChords()
+        string.append("")
         string += self.getScore()
         return(string)
 
