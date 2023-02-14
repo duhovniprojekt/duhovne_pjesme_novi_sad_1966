@@ -90,6 +90,30 @@ class Text:
 
 
 @dataclass
+class TimeSig:
+    subtype: Optional[int] = field(
+        default=None,
+        metadata={
+            "type": "Element",
+        }
+    )
+    sig_n: Optional[int] = field(
+        default=None,
+        metadata={
+            "name": "sigN",
+            "type": "Element",
+        }
+    )
+    sig_d: Optional[int] = field(
+        default=None,
+        metadata={
+            "name": "sigD",
+            "type": "Element",
+        }
+    )
+
+
+@dataclass
 class MetaTag:
     class Meta:
         name = "metaTag"
@@ -148,7 +172,14 @@ class Voice:
     class Meta:
         name = "voice"
 
-    rest: Optional[Union[str, Rest]] = field(
+    time_sig: Optional[TimeSig] = field(
+        default=None,
+        metadata={
+            "name": "TimeSig",
+            "type": "Element",
+        }
+    )
+    rest: Optional[Union[Rest, str]] = field(
         default=None,
         metadata={
             "name": "Rest",
@@ -182,8 +213,8 @@ class Staff:
             "type": "Element",
         }
     )
-    measure: Optional[Measure] = field(
-        default=None,
+    measure: List[Measure] = field(
+        default_factory=list,
         metadata={
             "name": "Measure",
             "type": "Element",
