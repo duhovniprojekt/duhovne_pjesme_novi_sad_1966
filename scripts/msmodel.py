@@ -216,28 +216,32 @@ class Voice:
     class Meta:
         name = "voice"
 
-    content: List[object] = field(
+    key_sig: Optional[KeySig] = field(
+        default=None,
+        metadata={
+            "name": "KeySig",
+            "type": "Element",
+        }
+    )
+    chord: List[Chord] = field(
         default_factory=list,
         metadata={
-            "type": "Elements",
-            "choices": (
-                {
-                    "name": "Chord",
-                    "type": Chord,
-                },
-                {
-                    "name": "Rest",
-                    "type": Rest,
-                },
-                {
-                    "name": "KeySig",
-                    "type": KeySig,
-                },
-                {
-                    "name": "TimeSig",
-                    "type": TimeSig,
-                }
-            )
+            "name": "Chord",
+            "type": "Element",
+        }
+    )
+    time_sig: Optional[TimeSig] = field(
+        default=None,
+        metadata={
+            "name": "TimeSig",
+            "type": "Element",
+        }
+    )
+    rest: List[Union[Rest, str]] = field(
+        default_factory=list,
+        metadata={
+            "name": "Rest",
+            "type": "Element",
         }
     )
 

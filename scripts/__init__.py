@@ -1,4 +1,4 @@
-from msmodel.muse_score import (
+from msmodel import (
     Channel,
     Chord,
     Instrument,

@@ -45,7 +45,7 @@ def create_model(path):
     files = find_files_with_extensions_is_path(path, EXTENSIONS)
     for f in files:
         shutil.move(f, f"{f}.xml")
-    utils.run_bash_cmd(f"xsdata --package msmodel {utils.get_full_path(path)}")
+    utils.run_bash_cmd(f"xsdata --compound-fields --structure-style single-package --package msmodel {utils.get_full_path(path)}")
     for f in files:
         shutil.move(f"{f}.xml", f)
 

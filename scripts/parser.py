@@ -75,8 +75,42 @@ def get_time_signature(measure: Measure) -> Optional[str]:
         return None
 
 
+class TypeKeySignature():
+    parser = {
+        -7: 'ces',
+        -6: 'ges',
+        -5: 'des',
+        -4: 'as',
+        -3: 'es',
+        -2: 'b',
+        -1: 'f',
+        0: 'c',
+        1: 'g',
+        2: 'd',
+        3: 'a',
+        4: 'e',
+        5: 'h',
+        6: 'fis',
+        7: 'cis',
+    }
+
+
+def get_key_signature(measure: Measure, is_first_measure=False) -> Optional[str]:
+    k = get_first_element(measure.voice).key_sig
+    if k is not None:
+        return TypeKeySignature.parser[k.accidental]
+    else:
+        if is_first_measure:
+            return TypeKeySignature.parser[0]
+        else:
+            return None
+
+
+def parse_measure(measure: Measure) -> Optional[str]:
+    return measure
+
+
 if __name__ == "__main__":
-    musescore = get_musescore("msmodel_examples/test_signatures.mscx")
+    musescore = get_musescore("msmodel_examples/test_note_duration.mscx")
     for i in range(get_measure_count(musescore)):
-        print(get_time_signature(get_measure(musescore, i)))
-    # print(get_time_signature(musescore.score.staff[0].measure[0]))
+        print(parse_measure(get_measure(musescore, i)))
