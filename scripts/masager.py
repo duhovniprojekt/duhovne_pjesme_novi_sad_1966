@@ -14,7 +14,7 @@ class Extensions(Enum):
     MSCX = ".mscx"
 
 
-EXTENSIONS = [Extensions.MSCZ.value, Extensions.MSCX.value]
+EXTENSIONS = [Extensions.MSCX.value]
 
 
 def find_files_with_extensions_is_path(path, extensions):
@@ -41,21 +41,13 @@ def cp(path, path_copy_to):
 
 
 @app.command()
-def convert(path):
+def create_model(path):
     files = find_files_with_extensions_is_path(path, EXTENSIONS)
     for f in files:
-        print(f"convert: {f}")
-        if f.endswith(Extensions.MSCX.value):
-            shutil.move(f, f"{f}.xml")
-        elif f.endswith(Extensions.MSCZ.value):
-            utils.run_bash_cmd(f"musescore {f} -o {f}.mscx")
-            shutil.move(f"{f}.mscx", f"{f}.xml")
-            os.remove(f)
-
-
-@app.command()
-def create_model(path):
+        shutil.move(f, f"{f}.xml")
     utils.run_bash_cmd(f"xsdata --package msmodel {utils.get_full_path(path)}")
+    for f in files:
+        shutil.move(f"{f}.xml", f)
 
 
 @app.callback()
