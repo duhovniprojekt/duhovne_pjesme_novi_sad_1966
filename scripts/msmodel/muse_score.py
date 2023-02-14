@@ -4,31 +4,8 @@ from xsdata.models.datatype import XmlDate
 
 
 @dataclass
-class Articulation:
-    name: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    velocity: Optional[int] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-    gate_time: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "gateTime",
-            "type": "Element",
-        }
-    )
-
-
-@dataclass
-class KeySig:
-    accidental: Optional[int] = field(
+class Channel:
+    synti: Optional[str] = field(
         default=None,
         metadata={
             "type": "Element",
@@ -87,20 +64,6 @@ class StaffType:
 
 @dataclass
 class Style:
-    enable_vertical_spread: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "enableVerticalSpread",
-            "type": "Element",
-        }
-    )
-    use_standard_note_names: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "useStandardNoteNames",
-            "type": "Element",
-        }
-    )
     spatium: Optional[float] = field(
         default=None,
         metadata={
@@ -111,10 +74,7 @@ class Style:
 
 
 @dataclass
-class Text1:
-    class Meta:
-        name = "Text"
-
+class Text:
     style: Optional[str] = field(
         default=None,
         metadata={
@@ -126,71 +86,6 @@ class Text1:
         metadata={
             "type": "Element",
         }
-    )
-
-
-@dataclass
-class TimeSig:
-    subtype: Optional[int] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-    sig_n: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "sigN",
-            "type": "Element",
-        }
-    )
-    sig_d: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "sigD",
-            "type": "Element",
-        }
-    )
-
-
-@dataclass
-class Bracket:
-    class Meta:
-        name = "bracket"
-
-    type: Optional[int] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    span: Optional[int] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    col: Optional[int] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-
-
-@dataclass
-class Family:
-    class Meta:
-        name = "family"
-
-    id: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    value: str = field(
-        default=""
     )
 
 
@@ -211,86 +106,18 @@ class MetaTag:
 
 
 @dataclass
-class Program:
-    class Meta:
-        name = "program"
-
-    value: Optional[int] = field(
+class Instrument:
+    track_name: Optional[object] = field(
         default=None,
         metadata={
-            "type": "Attribute",
-        }
-    )
-
-
-@dataclass
-class Text2:
-    class Meta:
-        name = "text"
-
-    content: List[object] = field(
-        default_factory=list,
-        metadata={
-            "type": "Wildcard",
-            "namespace": "##any",
-            "mixed": True,
-            "choices": (
-                {
-                    "name": "sym",
-                    "type": str,
-                },
-            ),
-        }
-    )
-
-
-@dataclass
-class Unsorted:
-    class Meta:
-        name = "unsorted"
-
-    group: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-
-
-@dataclass
-class Channel:
-    program: Optional[Program] = field(
-        default=None,
-        metadata={
+            "name": "trackName",
             "type": "Element",
         }
     )
-    synti: Optional[str] = field(
+    channel: Optional[Channel] = field(
         default=None,
         metadata={
-            "type": "Element",
-        }
-    )
-
-
-@dataclass
-class Tempo:
-    tempo: Optional[int] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-    follow_text: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "followText",
-            "type": "Element",
-        }
-    )
-    text: Optional[Text2] = field(
-        default=None,
-        metadata={
+            "name": "Channel",
             "type": "Element",
         }
     )
@@ -307,218 +134,10 @@ class Vbox:
             "type": "Element",
         }
     )
-    text: List[Text1] = field(
+    text: List[Text] = field(
         default_factory=list,
         metadata={
             "name": "Text",
-            "type": "Element",
-        }
-    )
-
-
-@dataclass
-class Instrument2:
-    class Meta:
-        name = "instrument"
-
-    id: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    family: Optional[Family] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-
-
-@dataclass
-class Section:
-    class Meta:
-        name = "section"
-
-    id: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    brackets: Optional[bool] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    show_system_markings: Optional[bool] = field(
-        default=None,
-        metadata={
-            "name": "showSystemMarkings",
-            "type": "Attribute",
-        }
-    )
-    bar_line_span: Optional[bool] = field(
-        default=None,
-        metadata={
-            "name": "barLineSpan",
-            "type": "Attribute",
-        }
-    )
-    thin_brackets: Optional[bool] = field(
-        default=None,
-        metadata={
-            "name": "thinBrackets",
-            "type": "Attribute",
-        }
-    )
-    family: List[str] = field(
-        default_factory=list,
-        metadata={
-            "type": "Element",
-        }
-    )
-    unsorted: Optional[Unsorted] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-
-
-@dataclass
-class Instrument1:
-    class Meta:
-        name = "Instrument"
-
-    id: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    long_name: Optional[str] = field(
-        default=None,
-        metadata={
-            "name": "longName",
-            "type": "Element",
-        }
-    )
-    short_name: Optional[str] = field(
-        default=None,
-        metadata={
-            "name": "shortName",
-            "type": "Element",
-        }
-    )
-    track_name: Optional[str] = field(
-        default=None,
-        metadata={
-            "name": "trackName",
-            "type": "Element",
-        }
-    )
-    min_pitch_p: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "minPitchP",
-            "type": "Element",
-        }
-    )
-    max_pitch_p: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "maxPitchP",
-            "type": "Element",
-        }
-    )
-    min_pitch_a: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "minPitchA",
-            "type": "Element",
-        }
-    )
-    max_pitch_a: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "maxPitchA",
-            "type": "Element",
-        }
-    )
-    instrument_id: Optional[str] = field(
-        default=None,
-        metadata={
-            "name": "instrumentId",
-            "type": "Element",
-        }
-    )
-    articulation: List[Articulation] = field(
-        default_factory=list,
-        metadata={
-            "name": "Articulation",
-            "type": "Element",
-        }
-    )
-    channel: Optional[Channel] = field(
-        default=None,
-        metadata={
-            "name": "Channel",
-            "type": "Element",
-        }
-    )
-
-
-@dataclass
-class Order:
-    id: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    customized: Optional[int] = field(
-        default=None,
-        metadata={
-            "type": "Attribute",
-        }
-    )
-    name: Optional[str] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-    instrument: Optional[Instrument2] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-    section: List[Section] = field(
-        default_factory=list,
-        metadata={
-            "type": "Element",
-            "sequential": True,
-        }
-    )
-    family: List[str] = field(
-        default_factory=list,
-        metadata={
-            "type": "Element",
-            "sequential": True,
-        }
-    )
-    soloists: Optional[object] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-    unsorted: Optional[object] = field(
-        default=None,
-        metadata={
             "type": "Element",
         }
     )
@@ -529,29 +148,8 @@ class Voice:
     class Meta:
         name = "voice"
 
-    key_sig: Optional[KeySig] = field(
+    rest: Optional[Union[str, Rest]] = field(
         default=None,
-        metadata={
-            "name": "KeySig",
-            "type": "Element",
-        }
-    )
-    time_sig: Optional[TimeSig] = field(
-        default=None,
-        metadata={
-            "name": "TimeSig",
-            "type": "Element",
-        }
-    )
-    tempo: Optional[Tempo] = field(
-        default=None,
-        metadata={
-            "name": "Tempo",
-            "type": "Element",
-        }
-    )
-    rest: List[Rest] = field(
-        default_factory=list,
         metadata={
             "name": "Rest",
             "type": "Element",
@@ -577,26 +175,6 @@ class Staff:
             "type": "Attribute",
         }
     )
-    staff_type: Optional[StaffType] = field(
-        default=None,
-        metadata={
-            "name": "StaffType",
-            "type": "Element",
-        }
-    )
-    bracket: Optional[Bracket] = field(
-        default=None,
-        metadata={
-            "type": "Element",
-        }
-    )
-    bar_line_span: Optional[int] = field(
-        default=None,
-        metadata={
-            "name": "barLineSpan",
-            "type": "Element",
-        }
-    )
     vbox: Optional[Vbox] = field(
         default=None,
         metadata={
@@ -604,17 +182,20 @@ class Staff:
             "type": "Element",
         }
     )
-    measure: List[Measure] = field(
-        default_factory=list,
+    measure: Optional[Measure] = field(
+        default=None,
         metadata={
             "name": "Measure",
             "type": "Element",
         }
     )
-    default_clef: Optional[str] = field(
+    value: str = field(
+        default=""
+    )
+    staff_type: Optional[StaffType] = field(
         default=None,
         metadata={
-            "name": "defaultClef",
+            "name": "StaffType",
             "type": "Element",
         }
     )
@@ -622,21 +203,21 @@ class Staff:
 
 @dataclass
 class Part:
-    staff: List[Staff] = field(
-        default_factory=list,
+    staff: Optional[Staff] = field(
+        default=None,
         metadata={
             "name": "Staff",
             "type": "Element",
         }
     )
-    track_name: Optional[str] = field(
+    track_name: Optional[object] = field(
         default=None,
         metadata={
             "name": "trackName",
             "type": "Element",
         }
     )
-    instrument: Optional[Instrument1] = field(
+    instrument: Optional[Instrument] = field(
         default=None,
         metadata={
             "name": "Instrument",
@@ -710,13 +291,6 @@ class Score:
             "type": "Element",
         }
     )
-    order: Optional[Order] = field(
-        default=None,
-        metadata={
-            "name": "Order",
-            "type": "Element",
-        }
-    )
     part: Optional[Part] = field(
         default=None,
         metadata={
@@ -724,8 +298,8 @@ class Score:
             "type": "Element",
         }
     )
-    staff: List[Staff] = field(
-        default_factory=list,
+    staff: Optional[Staff] = field(
+        default=None,
         metadata={
             "name": "Staff",
             "type": "Element",

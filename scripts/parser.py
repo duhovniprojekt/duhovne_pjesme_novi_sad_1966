@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-import utils
 from xsdata.formats.dataclass.context import XmlContext
 from xsdata.formats.dataclass.parsers import XmlParser
 
-SONG = "msmodel_examples/test_score.mscx"
+SONG = "msmodel_examples/test_header.mscx"
 
 from msmodel.muse_score import *
 
@@ -14,7 +13,13 @@ class Header:
     subtitle: str
     composer: str
     lyricist: str
-    copyright: str
+
+
+def get_first_element(element):
+    if isinstance(element, list):
+        return element[0]
+    else:
+        return element
 
 
 def get_header(museScore: MuseScore) -> Header:
@@ -22,12 +27,7 @@ def get_header(museScore: MuseScore) -> Header:
     subtitle = ""
     composer = ""
     lyricist = ""
-    copyright = ""
-    for t in museScore.score.meta_tag:
-        match t.name:
-            case "copyright":
-                copyright = t.value
-    for t in museScore.score.staff[0].vbox.text:
+    for t in get_first_element(museScore.score.staff).vbox.text:
         match t.style:
             case "Title":
                 title = t.text
@@ -37,19 +37,12 @@ def get_header(museScore: MuseScore) -> Header:
                 composer = t.text
             case "Lyricist":
                 lyricist = t.text
-    return Header(title=title, subtitle=subtitle, composer=composer, lyricist=lyricist, copyright=copyright)
-
-
-def get_time_signature(measure: Measure) -> str:
-    ts = measure.voice.time_sig
-    if ts is not None:
-        return f"{ts.sig_n}/{ts.sig_d}"
-    return ""
+    return Header(title=title, subtitle=subtitle, composer=composer, lyricist=lyricist)
 
 
 if __name__ == "__main__":
     parser = XmlParser(context=XmlContext())
     museScore = parser.parse(SONG, MuseScore)
-    # print(get_header(museScore))
-    print(museScore.score.staff[0].measure[1])
+    print(get_header(museScore))
+    # print(museScore.score.staff[0].measure[1])
     # print(get_time_signature(museScore.score.staff[0].measure[0]))
