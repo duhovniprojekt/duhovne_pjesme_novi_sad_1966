@@ -2,9 +2,19 @@ from dataclasses import dataclass
 from xsdata.formats.dataclass.context import XmlContext
 from xsdata.formats.dataclass.parsers import XmlParser
 
-SONG = "msmodel_examples/test_header.mscx"
-
 from msmodel.muse_score import *
+
+
+def get_musescore(filename):
+    parser = XmlParser(context=XmlContext())
+    return parser.parse(filename, MuseScore)
+
+
+def get_first_element(element):
+    if isinstance(element, list):
+        return element[0]
+    else:
+        return element
 
 
 @dataclass
@@ -13,13 +23,6 @@ class Header:
     subtitle: str
     composer: str
     lyricist: str
-
-
-def get_first_element(element):
-    if isinstance(element, list):
-        return element[0]
-    else:
-        return element
 
 
 def get_header(museScore: MuseScore) -> Header:
@@ -41,8 +44,6 @@ def get_header(museScore: MuseScore) -> Header:
 
 
 if __name__ == "__main__":
-    parser = XmlParser(context=XmlContext())
-    museScore = parser.parse(SONG, MuseScore)
-    print(get_header(museScore))
-    # print(museScore.score.staff[0].measure[1])
+    museScore = get_musescore("msmodel_examples/test_header.mscx")
+    print(get_first_element(museScore.score.staff).measure[0])
     # print(get_time_signature(museScore.score.staff[0].measure[0]))

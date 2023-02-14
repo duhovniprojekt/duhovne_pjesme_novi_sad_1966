@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<museScore version="3.02">
+  <Score>
+    <Part>
+      <Staff id="1">
+        </Staff>
+      </Part>
+    <Staff id="1">
+      <Measure>
+        <voice>
+          <Rest>
+            </Rest>
+          </voice>
+        </Measure>
+      </Staff>
+    </Score>
+  </museScore>
