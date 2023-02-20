@@ -222,20 +222,20 @@ class Voice:
             "type": "Elements",
             "choices": (
                 {
-                    "name": "Chord",
-                    "type": Chord,
-                },
-                {
-                    "name": "Rest",
-                    "type": Rest,
-                },
-                {
                     "name": "KeySig",
                     "type": KeySig,
                 },
                 {
+                    "name": "Chord",
+                    "type": Chord,
+                },
+                {
                     "name": "TimeSig",
                     "type": TimeSig,
+                },
+                {
+                    "name": "Rest",
+                    "type": Rest,
                 }
             )
         }
