@@ -68,9 +68,9 @@ def get_measure(musescore: MuseScore, index: int, staff: int = 0) -> Optional[Me
 
 
 def get_time_signature(measure: Measure) -> Optional[str]:
-    t = get_first_element(measure.voice).time_sig
-    if t is not None:
-        return f"{t.sig_n}/{t.sig_d}"
+    for t in measure.voice.content:
+        if isinstance(t, TimeSig):
+            return f"{t.sig_n}/{t.sig_d}"
     else:
         return None
 
@@ -96,14 +96,12 @@ class TypeKeySignature():
 
 
 def get_key_signature(measure: Measure, is_first_measure=False) -> Optional[str]:
-    k = get_first_element(measure.voice).key_sig
-    if k is not None:
-        return TypeKeySignature.parser[k.accidental]
-    else:
-        if is_first_measure:
-            return TypeKeySignature.parser[0]
-        else:
-            return None
+    for k in measure.voice.content:
+        if isinstance(k, KeySig):
+            return TypeKeySignature.parser[k.accidental]
+    if is_first_measure:
+        return TypeKeySignature.parser[0]
+    return None
 
 
 def parse_measure(measure: Measure) -> Optional[str]:
