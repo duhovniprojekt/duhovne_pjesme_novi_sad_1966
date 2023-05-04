@@ -184,8 +184,8 @@ class MuseScoreParser(XmlParser):
     def onBarLine(self, text):
         print("%% barLine:", text)
 
-    def onLyrics(self, no, text, syllabic):
-        print("%% lyrics:", no, text, syllabic)
+    def onLyrics(self, no, text, syllabic, ticks, ticks_f):
+        print("%% lyrics:", no, text, syllabic, ticks, ticks_f)
 
     def onClef(self, type):
         print("%% clef:", type)
@@ -310,10 +310,12 @@ class MuseScoreParser(XmlParser):
         if (self.getPath() == self.xml_paths['lyrics']):
             text = self.getTextFromChild(node, "text")
             syllabic = self.getTextFromChild(node, "syllabic")
+            ticks = self.getTextFromChild(node, "ticks")
+            ticks_f = self.getTextFromChild(node, "ticks_f")
             no = self.getTextFromChild(node, "no")
             if no == "": no = "0"
             if (text.strip()):
-                self.onLyrics(str(no), text, str(syllabic))
+                self.onLyrics(str(no), text, str(syllabic), ticks, ticks_f)
             return False
 
         if (self.getPath() == self.xml_paths['partStaff']):
@@ -336,9 +338,15 @@ class MuseScoreParser(XmlParser):
     def onMeasureExit(self):
         pass
 
+    def onNoteExit(self):
+        pass
+
     def onNodeExit(self):
         if (self.getPath() == self.xml_paths['measure']):
             self.onMeasureExit()
+        elif (self.getPath() == self.xml_paths['chord']):
+            self.onNoteExit()
+        
 
 class TypeKeySignature():
     parser = {
@@ -530,9 +538,9 @@ class TypeSlur():
 
     def getSlur(self):
         if self.type == "start":
-            return "("
+            return "\("
         else:
-            return ")"
+            return "\)"
 
 class TypeRehearsalMark():
     def __init__(self, text):
@@ -564,10 +572,12 @@ class TypeLayoutBreak():
         return "\\break"
 
 class TypeLyrics():
-    def __init__(self, no, text, syllabic):
+    def __init__(self, no, text, syllabic = "", ticks = "", ticks_f = ""):
         self.no = no
         self.text = text
         self.syllabic = syllabic
+        self.ticks = ticks
+        self.ticks_f = ticks_f
 
     def getNo(self):
         return self.no
@@ -580,6 +590,14 @@ class TypeLyrics():
 
     def getSyllabic(self):
         return "--"
+
+    def hasTicks(self):
+        return len(self.ticks) or len(self.ticks_f)
+
+    def getTicks(self):
+        if len(self.ticks):
+            return "__"
+        return ""
 
 class TypeClef():
     types = {
@@ -609,6 +627,7 @@ class LilypondGenerator(MuseScoreParser):
         '4' : "Four",
         '5' : "Five",
     }
+    lyricsFound = []
 
     def onMeasure(self):
         self.measure += 1
@@ -677,10 +696,12 @@ class LilypondGenerator(MuseScoreParser):
 
     def onTieStart(self):
         print("%% tieStart")
-        self.staff[self.currentStaffId].append(TypeTie())
+        #self.staff[self.currentStaffId].append(TypeTie())
+        self.staff[self.currentStaffId].append(TypeSlur('start'))
 
     def onTieEnd(self):
         print("%% tieEnd")
+        self.staff[self.currentStaffId].append(TypeSlur('end'))
 
     def onSlurStart(self):
         print("%% slurStart")
@@ -705,13 +726,21 @@ class LilypondGenerator(MuseScoreParser):
             self.staff[self.currentStaffId].append(self.addOnMeasureExit.pop())
         self.staff[self.currentStaffId].append(TypeBarValidator())
 
+    def onNoteExit(self):
+        print("%% onNoteExit", self.lyricsFound)
+        for l in range(4):
+            if str(l) not in self.lyricsFound:
+                self.staff[self.currentStaffId].append(TypeLyrics(str(l), "_"))
+        self.lyricsFound = []
+
     def onLayoutBreak(self, text):
         print("%% layout:", text)
         self.addOnMeasureExit.append(TypeLayoutBreak(text))
     
-    def onLyrics(self, no, text, syllabic):
-        print("%% lyrics:", no, text, syllabic)
-        self.staff[self.currentStaffId].append(TypeLyrics(no, text, syllabic))
+    def onLyrics(self, no, text, syllabic, ticks, ticks_f):
+        print("%% lyrics:", no, text, syllabic, ticks, ticks_f)
+        self.staff[self.currentStaffId].append(TypeLyrics(no, text, syllabic, ticks, ticks_f))
+        self.lyricsFound.append(no)
 
     def onClef(self, type):
         print("%% clef:", type)
@@ -824,6 +853,9 @@ class LilypondGenerator(MuseScoreParser):
                     if (element.hasSyllabic()):
                         line += element.getSyllabic()
                         line += " "
+                    if (element.hasTicks()):
+                        line += element.getTicks()
+                        line += " "
             if any(symbol in line for symbol in [".", ",", "!", "?", ":"]):
                 string.append(line)
                 line = "  "
@@ -858,7 +890,7 @@ class LilypondGenerator(MuseScoreParser):
         string.append("")
         string += self.getHeader()
         string.append("")
-        for i in range(1, 6):
+        for i in range(1, 2):
             string += self.getStaffStart(str(i))
             string += self.getStaffData(str(i))
             string += self.getStaffEnd()
