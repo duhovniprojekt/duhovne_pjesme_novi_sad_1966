@@ -115,7 +115,8 @@ class MuseScoreParser(XmlParser):
         "lyrics" : "/museScore/Score/Staff/Measure/voice/Chord/Lyrics",
         "clef" : "/museScore/Score/Staff/Measure/voice/Clef",
         "partStaff" : "/museScore/Score/Part/Staff",
-        "harmony" : "/museScore/Score/Staff/Measure/voice/Harmony"
+        "harmony" : "/museScore/Score/Staff/Measure/voice/Harmony",
+        "location": "/museScore/Score/Staff/Measure/voice/location"
     }
     measure = 0
 
@@ -128,73 +129,89 @@ class MuseScoreParser(XmlParser):
 
     def onMeasure(self):
         self.measure += 1
-        print("%% measure:", self.measure)
+        print("%% notImplemented onMeasure:", self.measure)
     
     def onHeaderTitle(self, title):
-        print("%% title:", title)
+        print("%% notImplemented onHeaderTitle:", title)
     
     def onHeaderComposer(self, composer):
-        print("%% composer:", composer)
+        print("%% notImplemented onHeaderComposer:", composer)
 
-    def onNote(self, pitch, tpc, duration, dots):
-        print("%% chord:", pitch, tpc, duration, dots)
+    def onChord(self, pitch, tpc, duration, dots):
+        print("%% notImplemented onChord:", pitch, tpc, duration, dots)
 
     def onKeySignature(self, keySignature):
-        print("%% keySignature:", keySignature)
+        print("%% notImplemented onKeySignature:", keySignature)
 
     def onTimeSignature(self, n, d):
-        print("%% timeSignature:", n + "/" + d)
+        print("%% notImplemented onTimeSignature:", n + "/" + d)
 
     def onRehearsalMark(self, rehearsalMark):
-        print("%% rehearsalMark:", rehearsalMark)
+        print("%% notImplemented onRehearsalMark:", rehearsalMark)
 
     def onRest(self, rest, dots):
-        print("%% rest:", rest, dots)
+        print("%% notImplemented onRest:", rest, dots)
 
     def onStartRepeat(self):
-        print("%% startRepeat")
+        print("%% notImplemented onStartRepeat")
 
     def onEndRepeat(self):
-        print("%% endRepeat")
+        print("%% notImplemented onEndRepeat")
 
     def onVoltaStart(self, volta_text, volta_end_type):
-        print("%% voltaStart:", volta_text, volta_end_type)
+        print("%% notImplemented onVoltaStart:", volta_text, volta_end_type)
 
     def onVoltaEnd(self):
-        print("%% voltaEnd")
+        print("%% notImplemented onVoltaEnd")
 
     def onTieStart(self):
-        print("%% tieStart")
+        print("%% notImplemented onTieStart")
 
     def onTieEnd(self):
-        print("%% tieEnd")
+        print("%% notImplemented onTieEnd")
 
     def onSlurStart(self):
-        print("%% slurStart")
+        print("%% notImplemented onSlurStart")
 
     def onSlurEnd(self):
-        print("%% slurEnd")
+        print("%% notImplemented onSlurEnd")
 
     def onStaffEnter(self, id):
-        print("%% staff:", id)
+        print("%% notImplemented onStaffEnter:", id)
 
     def onLayoutBreak(self, text):
-        print("%% layout:", text)
+        print("%% notImplemented onLayoutBreak:", text)
 
     def onBarLine(self, text):
-        print("%% barLine:", text)
+        print("%% notImplemented onBarLine:", text)
 
     def onLyrics(self, no, text, syllabic, ticks, ticks_f):
-        print("%% lyrics:", no, text, syllabic, ticks, ticks_f)
+        print("%% notImplemented onLyrics:", no, text, syllabic, ticks, ticks_f)
 
     def onClef(self, type):
-        print("%% clef:", type)
+        print("%% notImplemented onClef:", type)
 
     def onPartStaffEnter(self, id, defaultClef):
-        print("%% defaultClef:", defaultClef)
+        print(f"%% notImplemented onPartStaffEnter, id[{id}] defaultClef[{defaultClef}]")
 
     def onHarmony(self, root, name, base):
-        print("%% harmony:", root, name, base)
+        print("%% notImplemented onHarmony:", root, name, base)
+
+    def onMeasureExit(self):
+        print("%% notImplemented onMeasureExit")
+
+    def onNoteExit(self):
+        print("%% notImplemented onNoteExit")
+
+    def onNodeExit(self):
+        if (self.getPath() == self.xml_paths['measure']):
+            self.onMeasureExit()
+        elif (self.getPath() == self.xml_paths['chord']):
+            self.onNoteExit()
+
+    def onLocation(self, fractions):
+        print(f"%% notImplemented onLocation {fractions}")
+        
 
     def parseElement(self, node):
         # if you got all data from node and don't want to make a recursion on that node return True
@@ -217,7 +234,7 @@ class MuseScoreParser(XmlParser):
             pitch = self.getTextFromChild(node, "Note/pitch")
             tpc = self.getTextFromChild(node, "Note/tpc")
             dots = self.getTextFromChild(node, "dots")
-            self.onNote(pitch, tpc, duration, dots)
+            self.onChord(pitch, tpc, duration, dots)
             return False
 
         if (self.getPath() == self.xml_paths['keySignature']):
@@ -333,20 +350,14 @@ class MuseScoreParser(XmlParser):
             self.onHarmony(root ,name , base)
             return False
 
+        if (self.getPath() == self.xml_paths['location']):
+            fractions = self.getTextFromChild(node, "fractions")
+            self.onLocation(fractions)
+            return False
+
         return False
 
-    def onMeasureExit(self):
-        pass
-
-    def onNoteExit(self):
-        pass
-
-    def onNodeExit(self):
-        if (self.getPath() == self.xml_paths['measure']):
-            self.onMeasureExit()
-        elif (self.getPath() == self.xml_paths['chord']):
-            self.onNoteExit()
-        
+##### LILYPOND DEFINITIONS ##### 
 
 class TypeKeySignature():
     parser = {
@@ -391,24 +402,7 @@ class TypeDuration():
         '32nd' : '32'
     }
 
-class TypeRest(TypeDuration):
-    def __init__(self, duration, lastTypeTimeSignature, dots):
-        if (duration == "measure"):
-            if (lastTypeTimeSignature):
-                d, n = lastTypeTimeSignature.getTime()
-                self.rest = 'r%s*%s' % (n, d)
-            else:
-                self.rest = 'r1'
-        else:
-            if (dots):
-                dots = int(dots) * "."
-            self.rest = 'r' + self.parserDuration[duration] + dots
-
-
-    def getRest(self):
-        return self.rest
-
-class TypeNote(TypeDuration):
+class TypeTpc:
     parserTpc = {
         '-1' : 'feses',
         '0' : 'ceses',
@@ -447,6 +441,24 @@ class TypeNote(TypeDuration):
         '33' : 'hisis'
     }
 
+class TypeRest(TypeDuration):
+    def __init__(self, duration, lastTypeTimeSignature, dots):
+        if (duration == "measure"):
+            if (lastTypeTimeSignature):
+                d, n = lastTypeTimeSignature.getTime()
+                self.rest = 'r%s*%s' % (n, d)
+            else:
+                self.rest = 'r1'
+        else:
+            if (dots):
+                dots = int(dots) * "."
+            self.rest = 'r' + self.parserDuration[duration] + dots
+
+
+    def getRest(self):
+        return self.rest
+
+class TypeNote(TypeDuration, TypeTpc):
     def __init__(self, lastPitch, pitch, lastTpc, tpc, duration, dots):
         self.line = ""
         self.line += self.parserTpc[tpc]
@@ -506,6 +518,23 @@ class TypeNote(TypeDuration):
 
     def getPitch(self):
         return self.pitch
+
+class TypeHarmony(TypeDuration, TypeTpc):
+    def __init__(self, root, duration, name = "", base = ""):
+        if root in self.parserTpc:
+            self.line = self.parserTpc[root]
+        else:
+            self.line = "\\skip"
+        if len(name):
+            self.line += ":" + name
+        if len(duration):
+            self.line += duration
+        if len(base):
+            self.line += "/" + self.parserTpc[base]
+
+    def getChord(self):
+        return self.line
+
 
 class TypeBarLine():
     parser = {
@@ -611,6 +640,8 @@ class TypeClef():
     def getType(self):
         return "\\clef %s" % self.types[self.type]
 
+##### LILYPOND DEFINITIONS END #####
+
 class LilypondGenerator(MuseScoreParser):
 
     staff = {}
@@ -628,91 +659,94 @@ class LilypondGenerator(MuseScoreParser):
         '5' : "Five",
     }
     lyricsFound = []
+    harmonyFound = False
+    lastDuration = ""
 
     def onMeasure(self):
         self.measure += 1
         print("%% onMeasureEnter:", self.measure)
     
     def onHeaderTitle(self, title):
-        print("%% title:", title)
+        print("%% onHeaderTitle:", title)
         self.title = title
     
     def onHeaderComposer(self, composer):
-        print("%% composer:", composer)
+        print("%% onHeaderComposer:", composer)
         self.composer = composer
 
-    def onNote(self, pitch, tpc, duration, dots):
-        print("%% chord:", pitch, tpc, duration, dots)
+    def onChord(self, pitch, tpc, duration, dots):
+        print("%% onChord:", pitch, tpc, duration, dots)
         typeNote = TypeNote(self.lastPitch, pitch, self.lastTpc, tpc, duration, dots)
         self.lastPitch = pitch
         self.lastTpc = tpc
         self.staff[self.currentStaffId].append(typeNote)
+        self.lastDuration = duration
 
     def onKeySignature(self, keySignature):
-        print("%% keySignature:", keySignature)
+        print("%% onKeySignature:", keySignature)
         self.staff[self.currentStaffId].append(TypeKeySignature(keySignature))
 
     def onTimeSignature(self, n, d):
-        print("%% timeSignature:", n + "/" + d)
+        print("%% onTimeSignature:", n + "/" + d)
         typeTimeSignature = TypeTimeSignature(n, d)
         self.staff[self.currentStaffId].append(typeTimeSignature)
         self.lastTypeTimeSignature = typeTimeSignature
 
     def onRehearsalMark(self, rehearsalMark):
-        print("%% rehearsalMark:", rehearsalMark)
+        print("%% onRehearsalMark:", rehearsalMark)
         self.staff[self.currentStaffId].append(TypeRehearsalMark(rehearsalMark))
 
     def onRest(self, rest, dots):
-        print("%% rest:", rest)
+        print("%% onRest:", rest)
         self.staff[self.currentStaffId].append(TypeRest(rest, self.lastTypeTimeSignature, dots))
         self.lastTypeTimeSignature = None
 
     def onBarLine(self, text):
-        print("%% barLine:", text)
+        print("%% onBarLine:", text)
         self.staff[self.currentStaffId].append(TypeBarLine(text))
 
     def onStartRepeat(self):
-        print("%% startRepeat")
+        print("%% onStartRepeat")
         self.staff[self.currentStaffId].append(TypeBarLine('startRepeat'))
 
     def onEndRepeat(self):
-        print("%% endRepeat")
+        print("%% onEndRepeat")
         self.addOnMeasureExit.append(TypeBarLine('endRepeat'))
         # self.staff[self.currentStaffId].append(TypeBarLine('endRepeat'))
 
     def onVoltaStart(self, volta_text, volta_end_type):
-        print("%% voltaStart:", volta_text, volta_end_type)
+        print("%% onVoltaStart:", volta_text, volta_end_type)
         typeVolta = TypeVolta('start', volta_text, volta_end_type)
         # self.addOnMeasureExit.append(typeVolta)
         self.staff[self.currentStaffId].append(typeVolta)
         self.lastTypeVolta = typeVolta
 
     def onVoltaEnd(self):
-        print("%% voltaEnd")
+        print("%% onVoltaEnd")
         # self.addOnMeasureExit.append(TypeVolta('end', "", self.lastTypeVolta.getEnd()))
         # self.staff[self.currentStaffId].append(TypeVolta('end', "", self.lastTypeVolta.getEnd()))
         self.staff[self.currentStaffId].append(TypeVolta('end', "", None))
         self.lastTypeVolta = None
 
     def onTieStart(self):
-        print("%% tieStart")
+        print("%% onTieStart")
         #self.staff[self.currentStaffId].append(TypeTie())
         self.staff[self.currentStaffId].append(TypeSlur('start'))
 
     def onTieEnd(self):
-        print("%% tieEnd")
+        print("%% onTieEnd")
         self.staff[self.currentStaffId].append(TypeSlur('end'))
 
     def onSlurStart(self):
-        print("%% slurStart")
+        print("%% onSlurStart")
         self.staff[self.currentStaffId].append(TypeSlur('start'))
 
     def onSlurEnd(self):
-        print("%% slurEnd")
+        print("%% onSlurEnd")
         self.staff[self.currentStaffId].append(TypeSlur('end'))
 
     def onStaffEnter(self, id):
-        print("%% staff:", id)
+        print("%% onStaffEnter:", id)
         self.measure = 0
         self.lastPitch = 60
         self.lastTpc = 14
@@ -732,28 +766,34 @@ class LilypondGenerator(MuseScoreParser):
             if str(l) not in self.lyricsFound:
                 self.staff[self.currentStaffId].append(TypeLyrics(str(l), "_"))
         self.lyricsFound = []
+        if not self.harmonyFound:
+            print(TypeHarmony("s", self.lastDuration))
+        self.harmonyFound = False
+            
 
     def onLayoutBreak(self, text):
-        print("%% layout:", text)
+        print("%% onLayoutBreak:", text)
         self.addOnMeasureExit.append(TypeLayoutBreak(text))
     
     def onLyrics(self, no, text, syllabic, ticks, ticks_f):
-        print("%% lyrics:", no, text, syllabic, ticks, ticks_f)
+        print("%% onLyrics:", no, text, syllabic, ticks, ticks_f)
         self.staff[self.currentStaffId].append(TypeLyrics(no, text, syllabic, ticks, ticks_f))
         self.lyricsFound.append(no)
 
     def onClef(self, type):
-        print("%% clef:", type)
+        print("%% onClef:", type)
         self.staff[self.currentStaffId].append(TypeClef(type))
 
     def onPartStaffEnter(self, id, defaultClef):
-        print("%% defaultClef:", defaultClef)
+        print(f"%% onPartStaffEnter id[{id}] defaultClef[{defaultClef}]")
         if (not id in self.staff):
             self.staff[id] = []
         self.staff[id].append(TypeClef(defaultClef))
 
     def onHarmony(self, root, name, base):
         print("%% onHarmony:", root, name, base)
+        print(TypeHarmony(root, self.lastDuration, name, base).getChord())
+        self.harmonyFound = True
 
     def getHead(self):
         string = []
