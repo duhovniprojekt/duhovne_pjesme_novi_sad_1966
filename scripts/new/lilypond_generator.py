@@ -98,6 +98,8 @@ parser_clefs = {
 }
 
 parser_name = {
+    "": "Zero",
+    "0": "Zero",
     "1": "One",
     "2": "Two",
     "3": "Three",
@@ -258,7 +260,7 @@ class LilypondGenerator(mp.MuseScoreParser):
 #                string.append("  %s" % element.getType())
         return string        
 
-    def append_fraction_if_missing(self, bar, time_signature):
+    def fractions_add_missing(self, bar, time_signature):
         fraction_sum = Fraction(0)
         for e in bar:
             if isinstance(e, Fraction):
@@ -267,13 +269,53 @@ class LilypondGenerator(mp.MuseScoreParser):
             bar.append(time_signature - fraction_sum)
         return bar
 
+    def fractions_sum_neighbor(self, bar):
+        summed_bar = []
+        fraction = None
+        for e in bar:
+            if isinstance(e, Fraction):
+                if fraction is not None:
+                    fraction += e
+                else:
+                    fraction = e
+            else:
+                if fraction is not None:
+                    summed_bar.append(fraction)
+                    fraction = None
+                summed_bar.append(e)
+        if fraction is not None:
+            summed_bar.append(fraction)
+            fraction = None
+        return summed_bar
+
+    def fractions_add_skip_if_bar_starts_with_fraction(self, bar):
+        if len(bar) > 0 and isinstance(bar[0], Fraction):
+            bar.insert(0, "S")
+        return bar
+
+    def fractions_convert_bar_with_fractions_to_ly(self, bar):
+        line = ""
+        for e in bar:
+            if isinstance(e, Fraction):
+                found = False
+                for key, value in parser_duration_fractions.items():
+                    if e == Fraction(value):
+                        found = True
+                        line += parser_duration[key]
+                if not found:
+                    line += f"fraction_not_found[{e}]"
+                line += " "
+            else:
+                line += e
+        return line
+
     def get_harmony(self, staff):
         string = []
         string.append("harmony%s = \chordmode  {" % parser_name[staff.id])
         time_signature = None
-        bar = []
         for sc in staff.children:
             if isinstance(sc, mp.Measure):
+                bar = []
                 line = "  "
                 for e in sc.children:
 
@@ -296,45 +338,80 @@ class LilypondGenerator(mp.MuseScoreParser):
                         predicted_duration = Fraction(e.fractions)
                         bar.append(predicted_duration)
                       
-                bar = self.append_fraction_if_missing(bar, time_signature)
-                # join fractions if one after another
-                line += str(bar)
-                bar = []
+                bar = self.fractions_add_missing(bar, time_signature)
+                bar = self.fractions_sum_neighbor(bar)
+                bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
+                line += self.fractions_convert_bar_with_fractions_to_ly(bar)
                 line += "|"
                 string.append(line)
         string.append("}")
         return(string)
 
-#    def get_lyric_start(self, variable_name):
-#        string = []
-#        string.append("%s = \\lyricmode {" % variable_name)
-#        return string
-#
-#    def get_lyric_end(self):
-#        string = []
-#        string.append("}")
-#        return string 
+    def get_lyric_nos(self, staff):
+        nos = []
+        for sc in staff.children:
+            if isinstance(sc, mp.Measure):
+                for e in sc.children:
+                    if isinstance(e, mp.Lyrics):
+                        if e.no not in nos:
+                            nos.append(e.no)
+        return nos
 
-#    def get_lyric_data(self, id, no):
-#        string = []
-#        line = "  "
-#        for element in self.staff[id]:
-#            if isinstance(element, TypeLyrics):
-#                if (element.getNo() == no):
-#                    line += element.getText()
-#                    line += " "
-#                    if (element.hasSyllabic()):
-#                        line += element.getSyllabic()
-#                        line += " "
-#                    if (element.hasTicks()):
-#                        line += element.getTicks()
-#                        line += " "
-#            if any(symbol in line for symbol in [".", ",", "!", "?", ":"]):
-#                string.append(line)
-#                line = "  "
-#        if (line != "  "):
-#            string.append(line)
-#        return string
+    def fractions_swap_with_elements(self, bar):
+        swaped_bar = []
+        fraction = None
+        for e in bar:
+            if isinstance(e, Fraction):
+                fraction = e
+            else:
+                swaped_bar.append(e)
+                if fraction is not None:
+                    swaped_bar.append(fraction)
+                    fraction = None
+        if fraction is not None:
+            swaped_bar.append(fraction)
+            fraction = None
+        return swaped_bar
+
+    def get_lyric(self, staff, no):
+        string = []
+        string.append("lyric%s%s = \\lyricmode {" % (parser_name[staff.id], parser_name[no]))
+        time_signature = None
+        for sc in staff.children:
+            if isinstance(sc, mp.Measure):
+                bar = []
+                line = "  "
+                for e in sc.children:
+
+                    if isinstance(e, mp.TimeSig):
+                        time_signature = Fraction(f"{e.sig_n}/{e.sig_d}")
+                    if isinstance(e, mp.Lyrics):
+                        if e.no == no:
+                            bar.append(e.text)
+                    elif isinstance(e, mp.Chord):
+                        predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                        bar.append(predicted_duration)
+                    elif isinstance(e, mp.Rest):
+                        if e.duration_type == "measure":
+                            predicted_duration = Fraction(e.duration)
+                            bar.append(predicted_duration)
+                        else:
+                            predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                            bar.append(predicted_duration)
+
+                bar = self.fractions_add_missing(bar, time_signature)
+                bar = self.fractions_sum_neighbor(bar)
+                bar = self.fractions_swap_with_elements(bar)
+                bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
+                line += self.fractions_convert_bar_with_fractions_to_ly(bar)
+                #line += str(bar)
+                line += "|"
+                string.append(line)
+
+        string.append("}")
+        return string 
+
+
     def get_score(self):
         string = []
         string.append("\\score {")
@@ -344,9 +421,8 @@ class LilypondGenerator(mp.MuseScoreParser):
             string.append("    \\new Staff {")
             string.append("        \\new Voice = \"lead\" { \\staff%s }" % parser_name[staff.id])
             string.append("    }")
-#        for i in range(0, 6):
-#            if (self.getLyricData(str(1), str(i))):
-#                string.append("    \\new Lyrics \\lyricsto \"lead\" { \\lyric%s%s }" % (self.nameIteration["1"], self.nameIteration[str(i)]))
+            for no in self.get_lyric_nos(staff):
+                string.append("    \\new Lyrics \"lead\" { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no]))
         string.append("    >>")
         string.append("}")
         return(string)
@@ -364,14 +440,9 @@ class LilypondGenerator(mp.MuseScoreParser):
             string.append("")
             string += self.get_harmony(s)
             string.append("")
-#        for i in range(0, 6):
-#            if (self.getLyricData(str(1), str(i))):
-#                string += self.getLyricStart(str(1), str(i))
-#                string += self.getLyricData(str(1), str(i))
-#                string += self.getLyricEnd()
-#                string.append("")
-#        string += self.getChords()
-#        string.append("")
+            for no in self.get_lyric_nos(s):
+                string += self.get_lyric(s, no)
+                string.append("")
         string += self.get_score()
         return(string)
 
