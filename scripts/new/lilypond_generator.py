@@ -34,7 +34,8 @@ parser_duration = {
     'quarter' : '4',
     'eighth' : '8',
     '16th' : '16',
-    '32nd' : '32'
+    '32nd' : '32',
+    '64th' : '64'
 }
 
 parser_duration_fractions = {
@@ -43,7 +44,8 @@ parser_duration_fractions = {
     'quarter' : "1/4",
     'eighth' : "1/8",
     '16th' : "1/16",
-    '32nd' : "1/32"
+    '32nd' : "1/32",
+    '64th' : "1/64"
 }
 
 parser_tpc = {
@@ -106,7 +108,15 @@ parser_name = {
     "4": "Four",
     "5": "Five",
     "6": "Six",
-    }
+}
+
+parser_dots_fractions = {
+    "": 1,
+    "1": 1 + 1/2,
+    "2": 1 + 1/2 + 1/2/2,
+    "3": 1 + 1/2 + 1/2/2 + 1/2/2/2,
+    "4": 1 + 1/2 + 1/2/2 + 1/2/2/2 + 1/2/2/2/2,
+}
 
 last_pitch = 60
 last_tpc = 14
@@ -290,7 +300,7 @@ class LilypondGenerator(mp.MuseScoreParser):
 
     def fractions_add_skip_if_bar_starts_with_fraction(self, bar):
         if len(bar) > 0 and isinstance(bar[0], Fraction):
-            bar.insert(0, "S")
+            bar.insert(0, "s")
         return bar
 
     def fractions_convert_bar_with_fractions_to_ly(self, bar):
@@ -306,7 +316,11 @@ class LilypondGenerator(mp.MuseScoreParser):
                     line += f"fraction_not_found[{e}]"
                 line += " "
             else:
-                line += e
+                if e in ["--", "__"]:
+                    line += e
+                    line += " "
+                else:
+                    line += e
         return line
 
     def get_harmony(self, staff):
@@ -362,7 +376,11 @@ class LilypondGenerator(mp.MuseScoreParser):
         fraction = None
         for e in bar:
             if isinstance(e, Fraction):
-                fraction = e
+                if fraction is None:
+                    fraction = e
+                else:
+                    swaped_bar.append(fraction)
+                    fraction = e
             else:
                 swaped_bar.append(e)
                 if fraction is not None:
@@ -376,20 +394,19 @@ class LilypondGenerator(mp.MuseScoreParser):
     def get_lyric(self, staff, no):
         string = []
         string.append("lyric%s%s = \\lyricmode {" % (parser_name[staff.id], parser_name[no]))
-        time_signature = None
         for sc in staff.children:
             if isinstance(sc, mp.Measure):
                 bar = []
-                line = "  "
                 for e in sc.children:
 
-                    if isinstance(e, mp.TimeSig):
-                        time_signature = Fraction(f"{e.sig_n}/{e.sig_d}")
                     if isinstance(e, mp.Lyrics):
                         if e.no == no:
                             bar.append(e.text)
+                            if e.syllabic in ["begin", "middle"]:
+                                bar.append("--")
                     elif isinstance(e, mp.Chord):
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                        predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                         bar.append(predicted_duration)
                     elif isinstance(e, mp.Rest):
                         if e.duration_type == "measure":
@@ -397,12 +414,13 @@ class LilypondGenerator(mp.MuseScoreParser):
                             bar.append(predicted_duration)
                         else:
                             predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                            predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                             bar.append(predicted_duration)
 
-                bar = self.fractions_add_missing(bar, time_signature)
-                bar = self.fractions_sum_neighbor(bar)
                 bar = self.fractions_swap_with_elements(bar)
-                bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
+                #bar = self.fractions_sum_neighbor(bar)
+                #bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
+                line = "  "
                 line += self.fractions_convert_bar_with_fractions_to_ly(bar)
                 #line += str(bar)
                 line += "|"
@@ -418,11 +436,9 @@ class LilypondGenerator(mp.MuseScoreParser):
         string.append("    <<")
         for staff in self.staffs:
             string.append("    \\new ChordNames \\harmony%s" % parser_name[staff.id])
-            string.append("    \\new Staff {")
-            string.append("        \\new Voice = \"lead\" { \\staff%s }" % parser_name[staff.id])
-            string.append("    }")
+            string.append("    \\new Staff { \\staff%s }" % parser_name[staff.id])
             for no in self.get_lyric_nos(staff):
-                string.append("    \\new Lyrics \"lead\" { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no]))
+                string.append("    \\new Lyrics { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no]))
         string.append("    >>")
         string.append("}")
         return(string)
