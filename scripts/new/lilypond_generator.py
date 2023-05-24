@@ -121,7 +121,7 @@ parser_dots_fractions = {
 last_pitch = 60
 last_tpc = 14
 
-def get_note(pitch, tpc, duration, dots):
+def get_pitch(pitch, tpc):
         global last_pitch, last_tpc
         line = parser_tpc[tpc]
         pitch_diff = int(pitch) - int(last_pitch)
@@ -174,9 +174,6 @@ def get_note(pitch, tpc, duration, dots):
             else:
                 print("%% pitch_diff <<<")
                 line += ",,,"
-        line += parser_duration[duration]
-        if (dots):
-            line += int(dots) * "."
         return line
     
 #~
@@ -220,55 +217,6 @@ class LilypondGenerator(mp.MuseScoreParser):
         string = []
         string.append("}")
         return string              
-
-    def get_staff_data(self, staff):
-        string = []
-        for sc in staff.children:
-            if isinstance(sc, mp.Measure):
-                line = "  "
-                for e in sc.children:
-                    if isinstance(e, mp.TimeSig):
-                        string.append("  \\time %s/%s" % (e.sig_n, e.sig_d))
-                    elif isinstance(e, mp.Rest):
-                        if e.duration_type == "measure":
-                            line += "r" + parser_key_signature_duration[e.duration]
-                        else:
-                            line += "r" + parser_duration[e.duration_type]
-                        line += " "
-                    elif isinstance(e, mp.Chord):
-                        line += get_note(e.note_pitch, e.note_tpc, e.duration_type, e.dots)
-                        line += " "
-                line += "|"
-                string.append(line)
-#            elif isinstance(element, TypeKeySignature):
-#                string.append("  \\key %s \\major" % element.getKey())
-#            elif isinstance(element, TypeTie):
-#                line += element.getTie()
-#                line += " "
-#            elif isinstance(element, TypeSlur):
-#                line += element.getSlur()
-#                line += " "
-#            elif isinstance(element, TypeBarLine):
-#                line += "\\bar \"%s\"" % element.getLine()
-#                line += " "
-#            elif isinstance(element, TypeLayoutBreak):
-#                line += element.getBreak()
-#                line += " "
-#            elif isinstance(element, TypeRehearsalMark):
-#                line += '\n'
-#                line += '  '
-#                line += element.getMark()
-#                line += '\n'
-#                line += "  "
-#            elif isinstance(element, TypeVolta):
-#                line += '\n'
-#                line += '  '
-#                line += element.getVolta()
-#                line += '\n'
-#                line += "  "
-#            elif isinstance(element, TypeClef):
-#                string.append("  %s" % element.getType())
-        return string        
 
     def fractions_add_missing(self, bar, time_signature):
         fraction_sum = Fraction(0)
@@ -323,6 +271,63 @@ class LilypondGenerator(mp.MuseScoreParser):
                     line += e
         return line
 
+    def get_staff_data(self, staff):
+        string = []
+        for sc in staff.children:
+            if isinstance(sc, mp.Measure):
+                bar = []
+                line = "  "
+                for e in sc.children:
+                    if isinstance(e, mp.TimeSig):
+                        string.append("  \\time %s/%s" % (e.sig_n, e.sig_d))
+                    elif isinstance(e, mp.Rest):
+                        if e.duration_type == "measure":
+                            bar.append("r")
+                            predicted_duration = Fraction(e.duration)
+                            bar.append(predicted_duration)
+                        else:
+                            bar.append("r")
+                            predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                            predicted_duration *= Fraction(parser_dots_fractions[e.dots])
+                    elif isinstance(e, mp.Chord):
+                        bar.append(get_pitch(e.note_pitch, e.note_tpc))
+                        predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                        bar.append(predicted_duration)
+                line += str(bar)
+                #line += self.fractions_convert_bar_with_fractions_to_ly(bar)
+                line += "|"
+                string.append(line)
+#            elif isinstance(element, TypeKeySignature):
+#                string.append("  \\key %s \\major" % element.getKey())
+#            elif isinstance(element, TypeTie):
+#                line += element.getTie()
+#                line += " "
+#            elif isinstance(element, TypeSlur):
+#                line += element.getSlur()
+#                line += " "
+#            elif isinstance(element, TypeBarLine):
+#                line += "\\bar \"%s\"" % element.getLine()
+#                line += " "
+#            elif isinstance(element, TypeLayoutBreak):
+#                line += element.getBreak()
+#                line += " "
+#            elif isinstance(element, TypeRehearsalMark):
+#                line += '\n'
+#                line += '  '
+#                line += element.getMark()
+#                line += '\n'
+#                line += "  "
+#            elif isinstance(element, TypeVolta):
+#                line += '\n'
+#                line += '  '
+#                line += element.getVolta()
+#                line += '\n'
+#                line += "  "
+#            elif isinstance(element, TypeClef):
+#                string.append("  %s" % element.getType())
+        return string        
+
+
     def get_harmony(self, staff):
         string = []
         string.append("harmony%s = \chordmode  {" % parser_name[staff.id])
@@ -340,6 +345,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                         bar.append(harmony)
                     elif isinstance(e, mp.Chord):
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                        predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                         bar.append(predicted_duration)
                     elif isinstance(e, mp.Rest):
                         if e.duration_type == "measure":
@@ -347,6 +353,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                             bar.append(predicted_duration)
                         else:
                             predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                            predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                             bar.append(predicted_duration)
                     elif isinstance(e, mp.Location):
                         predicted_duration = Fraction(e.fractions)
