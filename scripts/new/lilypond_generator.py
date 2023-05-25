@@ -289,9 +289,11 @@ class LilypondGenerator(mp.MuseScoreParser):
                             bar.append("r")
                             predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                             predicted_duration *= Fraction(parser_dots_fractions[e.dots])
+                            bar.append(predicted_duration)
                     elif isinstance(e, mp.Chord):
                         bar.append(get_pitch(e.note_pitch, e.note_tpc))
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                        predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                         bar.append(predicted_duration)
                 line += str(bar)
                 #line += self.fractions_convert_bar_with_fractions_to_ly(bar)
