@@ -39,6 +39,7 @@ parser_duration_fractions = {
 }
 
 parser_tpc = {
+    '' : 'c',    
     '-1' : 'feses',
     '0' : 'ceses',
     '1' : 'geses',
@@ -116,6 +117,7 @@ parser_fraction_to_duration = {
     "1/2": "2",
 
     "1/4": "4",
+    "2/4": "2",
     "3/4": "2.",
 
     "1/8": "8",
@@ -135,6 +137,12 @@ parser_fraction_to_duration = {
 
 parse_measure_end_repeat = {
     "2": ":|."
+}
+
+#https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
+parse_chord_names = {
+    "m7": "m7",
+    "(add9)": "5.9"
 }
 
 last_pitch = 60
@@ -216,6 +224,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                     string.append(f"  title = \"%s\"" % e.text)
                 elif e.style == "Composer":
                     string.append("  composer = \"%s\"" % e.text)
+                elif e.style == "Lyricist":
+                    string.append("  poet = \"%s\"" % e.text)
         string.append("}")
         return string        
 
@@ -278,6 +288,28 @@ class LilypondGenerator(mp.MuseScoreParser):
                         line += " "
         return line
 
+    def fractions_convert_harmony_bar_with_fractions_to_ly(self, bar):
+        line = ""
+        harmony = None
+        for e in bar:
+            if isinstance(e, Fraction):
+                if harmony is not None:
+                    line += parser_tpc[harmony.root]
+                line += parser_fraction_to_duration[str(e)]
+                if harmony is not None:
+                    if harmony.name:
+                        line += ":" + parse_chord_names[harmony.name]
+                    if harmony.base:
+                        line += "/" + parser_tpc[harmony.base]
+                line += " "
+                harmony = None
+            elif isinstance(e, mp.Harmony):
+                harmony = e
+            else:
+                line += e
+            
+        return line
+
     def get_staff_data(self, staff):
         string = []
         for sc in staff.children:
@@ -288,6 +320,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                 for e in sc.children:
                     if isinstance(e, mp.TimeSig):
                         string.append("  \\time %s/%s" % (e.sig_n, e.sig_d))
+                    elif isinstance(e, mp.Tempo):
+                        string.append("  \\tempo 4 = %s" % int((60 * float(e.tempo))))
                     elif isinstance(e, mp.Rest):
                         if e.duration_type == "measure":
                             bar.append("r")
@@ -339,6 +373,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                             text = "\\set Score.repeatCommands = #\'((volta #f))"
                             bar.append(text)
                 #line += str(bar) + "\n  "
+                if sc.len:
+                    line += "\\partial %s" % parser_fraction_to_duration[sc.len]
+                    line += "\n  "
                 line += self.fractions_convert_bar_with_fractions_to_ly(bar)
                 if sc.end_repeat:
                     line += "\\bar \"%s\"" % parse_measure_end_repeat[sc.end_repeat]
@@ -363,8 +400,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                     if isinstance(e, mp.TimeSig):
                         time_signature = Fraction(f"{e.sig_n}/{e.sig_d}")
                     elif isinstance(e, mp.Harmony):
-                        harmony = parser_tpc[e.root]
-                        bar.append(harmony)
+                        bar.append(e)
                     elif isinstance(e, mp.Chord):
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                         predicted_duration *= Fraction(parser_dots_fractions[e.dots])
@@ -380,13 +416,18 @@ class LilypondGenerator(mp.MuseScoreParser):
                     elif isinstance(e, mp.Location):
                         predicted_duration = Fraction(e.fractions)
                         bar.append(predicted_duration)
-                      
-                bar = self.fractions_add_missing(bar, time_signature)
+                if sc.len:
+                    bar = self.fractions_add_missing(bar, Fraction(sc.len))
+                else:
+                    bar = self.fractions_add_missing(bar, time_signature)
                 bar = self.fractions_sum_neighbor(bar)
                 bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
-                line += self.fractions_convert_bar_with_fractions_to_ly(bar)
+                line += self.fractions_convert_harmony_bar_with_fractions_to_ly(bar)
+                #line += str(bar)
                 line += "|"
                 string.append(line)
+        # force end bar
+        string.append("  \\bar \"|.\"")
         string.append("}")
         return(string)
 

@@ -19,6 +19,7 @@ class Staff(Base):
 @dataclass
 class Measure(Base):
     end_repeat: str
+    len: str
     children: list = field(default_factory=lambda: [])
 
 @dataclass
@@ -104,6 +105,12 @@ class VoltaSpanner(Base):
     next_location_measures: str
     prev_location_measures: str
 
+@dataclass
+class Tempo(Base):
+    tempo: str
+    text: str
+    text_sym: str
+
 class MuseScoreParser(XmlParser):
     staffs = []
 
@@ -123,8 +130,10 @@ class MuseScoreParser(XmlParser):
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure":
+            attr = self.get_attributes(node)
             end_repeat = self.get_text_from_child(node, "endRepeat")
-            self.add_to_staff(Measure(end_repeat))
+            measure_len = attr.get("len", "")
+            self.add_to_staff(Measure(end_repeat, measure_len))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/VBox/Text":
@@ -237,7 +246,11 @@ class MuseScoreParser(XmlParser):
             prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
             self.add_to_measure(ChordNoteSpanner(attr_type, next_location_fractions, prev_location_fractions))
 
-
+        if self.get_path() == "/museScore/Score/Staff/Measure/voice/Tempo":
+            tempo = self.get_text_from_child(node, "tempo")
+            text =self.get_text_from_child(node, "text")
+            text_sym = self.get_text_from_child(node,"text/sym")
+            self.add_to_measure(Tempo(tempo, text, text_sym))
 
             return False
 
