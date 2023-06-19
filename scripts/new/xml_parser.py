@@ -47,7 +47,7 @@ class XmlParser():
         attrs = []
         for attr in node.attributes.items():
             attrs.append(attr)
-        return attrs
+        return dict(attrs)
 
     def get_parent_node_by_path(self, current_node, path):
         indent_path = list(self.indent)

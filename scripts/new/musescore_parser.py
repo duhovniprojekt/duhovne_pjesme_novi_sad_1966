@@ -18,6 +18,7 @@ class Staff(Base):
 
 @dataclass
 class Measure(Base):
+    end_repeat: str
     children: list = field(default_factory=lambda: [])
 
 @dataclass
@@ -56,11 +57,12 @@ class Chord(Base):
 
 @dataclass
 class KeySig(Base):
-    duration_type: str
+    accidental: str
 
 @dataclass
 class Clef(Base):
     concert_clef_type: str
+    transposing_clef_type: str
 
 @dataclass
 class RehearsalMark(Base):
@@ -82,6 +84,26 @@ class Lyrics(Base):
     ticks_f: str
     no: str
 
+@dataclass
+class ChordNoteSpanner(Base):
+    type: str
+    next_location_fractions: str
+    prev_location_fractions: str
+
+@dataclass
+class ChordSpanner(Base):
+    type: str
+    next_location_fractions: str
+    prev_location_fractions: str
+
+@dataclass
+class VoltaSpanner(Base):
+    end_hook_type: str
+    begin_text: str
+    endings: str
+    next_location_measures: str
+    prev_location_measures: str
+
 class MuseScoreParser(XmlParser):
     staffs = []
 
@@ -95,14 +117,14 @@ class MuseScoreParser(XmlParser):
         # if you got all data from node and don't want to make a recursion on that node return True
 
         if self.get_path() == "/museScore/Score/Staff":
-            for attr in self.get_attributes(node):
-                if (attr[0] == 'id'):
-                    id = attr[1]
-                    self.staffs.append(Staff(id))
+            attr = self.get_attributes(node)
+            id = attr["id"]
+            self.staffs.append(Staff(id))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure":
-            self.add_to_staff(Measure())
+            end_repeat = self.get_text_from_child(node, "endRepeat")
+            self.add_to_staff(Measure(end_repeat))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/VBox/Text":
@@ -152,7 +174,8 @@ class MuseScoreParser(XmlParser):
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Clef":
             concert_clef_type = self.get_text_from_child(node, "concertClefType")
-            self.add_to_measure(Clef(concert_clef_type))
+            transposing_clef_type = self.get_text_from_child(node, "transposingClefType")
+            self.add_to_measure(Clef(concert_clef_type, transposing_clef_type))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/RehearsalMark":
@@ -182,50 +205,40 @@ class MuseScoreParser(XmlParser):
             return False
 
         if self.get_path() == "/museScore/Score/Part/Staff":
-            for attr in self.get_attributes(node):
-                if (attr[0] == 'id'):
-                    id = attr[1]
-                    default_clef = self.get_text_from_child(node, "defaultClef")
+            #attr = self.get_attributes(node)
+            #id = attr["id"]
+            #default_clef = self.get_text_from_child(node, "defaultClef")
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Spanner":
-            attr = self.get_attributes(node)
-            for a in attr:
-                attr_type, attr_text = a
-                if attr_type == "type" and attr_text == "Volta":
-                    if self.has_child(node, "next"):
-                        volta_text = self.get_text_from_child(node, "Volta/begin_text")
-                        volta_end_type = self.get_text_from_child(node, "Volta/end_hook_type")
-                        #self.on_volta_start(volta_text, volta_end_type)
-                    elif self.has_child(node, "prev"):
-                        pass
-                        #self.on_volta_end()
+            attr = dict(self.get_attributes(node))
+            attr_type = attr["type"]
+            if attr_type == "Volta":
+                end_hook_type = self.get_text_from_child(node, "Volta/endHookType")
+                begin_text = self.get_text_from_child(node, "Volta/beginText")
+                endings = self.get_text_from_child(node, "Volta/endings")
+                next_location_measures = self.get_text_from_child(node, "next/location/measures")
+                prev_location_measures = self.get_text_from_child(node, "prev/location/measures")
+                self.add_to_measure(VoltaSpanner(end_hook_type, begin_text, endings, next_location_measures, prev_location_measures))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Chord/Spanner":
-            attr = self.get_attributes(node)
-            for a in attr:
-                attr_type, attr_text = a
-                if attr_type == "type" and attr_text == "Slur":
-                    if self.has_child(node, "next"):
-                        pass
-                        #self.on_slur_start()
-                    elif self.has_child(node, "prev"):
-                        pass
-                        #self.on_slur_end()
+            attr = dict(self.get_attributes(node))
+            attr_type = attr["type"]
+            next_location_fractions = self.get_text_from_child(node, "next/location/fractions")
+            prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
+            self.add_to_measure(ChordSpanner(attr_type, next_location_fractions, prev_location_fractions))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Chord/Note/Spanner":
-            attr = self.get_attributes(node)
-            for a in attr:
-                attr_type, attr_text = a
-                if attr_type == "type" and attr_text == "Tie":
-                    if self.has_child(node, "next"):
-                        pass
-                        #self.on_tie_start()
-                    elif self.has_child(node, "prev"):
-                        pass
-                        #self.on_tie_end()
+            attr = dict(self.get_attributes(node))
+            attr_type = attr["type"]
+            next_location_fractions = self.get_text_from_child(node, "next/location/fractions")
+            prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
+            self.add_to_measure(ChordNoteSpanner(attr_type, next_location_fractions, prev_location_fractions))
+
+
+
             return False
 
         return False
