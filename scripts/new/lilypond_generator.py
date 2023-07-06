@@ -474,6 +474,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                             bar.append(e.text)
                             if e.syllabic in ["begin", "middle"]:
                                 bar.append("--")
+                            if e.ticks_f:
+                                predicted_duration = - Fraction(e.ticks_f)
+                                #bar.append(predicted_duration)
                     elif isinstance(e, mp.Chord):
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                         predicted_duration *= Fraction(parser_dots_fractions[e.dots])
@@ -492,7 +495,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                 #bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
                 line = "  "
                 line += self.fractions_convert_bar_with_fractions_to_ly(bar)
-                #line += str(bar)
+                #line = str(bar)
                 line += "|"
                 string.append(line)
 
