@@ -133,6 +133,9 @@ parser_fraction_to_duration = {
     "3/32": "16.",
     "7/32": "8..",
     "15/32": "4...",
+
+    "1/64": "64",
+    "3/64": "32.",
 }
 
 parse_measure_end_repeat = {
@@ -142,7 +145,21 @@ parse_measure_end_repeat = {
 #https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
 parse_chord_names = {
     "m7": "m7",
-    "(add9)": "5.9"
+    "(add9)": "5.9",
+    "7": "7",
+    "m6": "m6",
+    "dim6": "dim6",
+    "dim7": "dim7",
+    "m7(11)": "m7.11",
+    "6": "6",
+    "Maj9": "maj9",
+    "7(b9)": "7.9-",
+    "m": "m",
+    "0": "", #what is this
+    "7(#9)": "7.9+",
+    "o7": "dim7",
+    "7(#5)": "7.5+",
+    "(b5)": "dim",
 }
 
 last_pitch = 60
@@ -209,6 +226,16 @@ class LilypondGenerator(mp.MuseScoreParser):
         string = []
         string.append("\\version \"2.24.1\"")
         string.append("\\include \"deutsch.ly\"")
+        string.append("jazzChords = {}")
+        string.append("aFourL = {}")
+        string.append("markMojPoc = {}")
+        #string.append("markMojPoc =")
+        #string.append("#(define-music-function")
+        #string.append("  (letter)")
+        #string.append("  #{")
+        #string.append("  \\mark \\markup { \\box \\bold #letter }")
+        #string.append("  #})")
+        string.append("%\\include \"../config/include.ily\"")
         string.append("")
         string.append("\layout {")
         string.append("  indent = 0")
@@ -218,6 +245,9 @@ class LilypondGenerator(mp.MuseScoreParser):
     def get_header(self):
         string = []
         string.append("\header {")
+        string.append("  titlex = \"Farmfest 2023\"")
+        string.append("  broj = \"1\"")
+        poet_found = False
         for e in self.staffs[0].children:
             if isinstance(e, mp.VBox):
                 if e.style == "Title":
@@ -225,9 +255,24 @@ class LilypondGenerator(mp.MuseScoreParser):
                 elif e.style == "Composer":
                     string.append("  composer = \"%s\"" % e.text)
                 elif e.style == "Lyricist":
-                    string.append("  poet = \"%s\"" % e.text)
+                    string.append("  style = \"%s\"" % e.text)
+                    poet_found = True
+        if not poet_found:
+            string.append("  style = \"\"")
+        string.append("  %tagline = \\markup { \\override #'(font-name . \"JohnSans White Pro\") \\override #'(font-size . -3) { Izvorno: Name, Album } }")
+
         string.append("}")
         return string        
+
+    def get_paper(self):
+        string = []
+        string.append("\\paper {")
+        string.append("  \\aFourL")
+        string.append("  %min-systems-per-page = #7")
+        string.append("  %annotate-spacing = ##t")
+        string.append("  %system-system-spacing.padding = #3.2")
+        string.append("}")
+        return string
 
     def get_staff_start(self, staff):
         string = []
@@ -353,8 +398,13 @@ class LilypondGenerator(mp.MuseScoreParser):
                     elif isinstance(e, mp.BarLine):
                         bar.append("\\bar \"%s\"" % parser_barline[e.subtype])
                     elif isinstance(e, mp.RehearsalMark):
-                        text = "\\mark \\markup { \\box \\bold %s }" % e.text
+                        #text = "\\mark \\markup { \\box \\bold %s }" % e.text
+                        #bar.append(text)
+                        #text = "\\markMojPoc { %s }" % e.text
+                        text = "\\markMojPoc"
                         bar.append(text)
+                        #text = "%\\markMojPonn"
+                        #bar.append(text)
                     elif isinstance(e, mp.Clef):
                         if e.concert_clef_type:
                             text = "\\clef %s" % parser_clefs[e.concert_clef_type]
@@ -511,7 +561,7 @@ class LilypondGenerator(mp.MuseScoreParser):
             string.append("    \\new ChordNames \\harmony%s" % parser_name[staff.id])
             string.append("    \\new Staff { \\staff%s }" % parser_name[staff.id])
             for no in self.get_lyric_nos(staff):
-                string.append("    \\new Lyrics { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no]))
+                string.append("    \\new Lyrics { \\jazzChords \\lyric%s%s }" % (parser_name[staff.id], parser_name[no]))
         string.append("    >>")
         string.append("}")
         return(string)
@@ -521,6 +571,8 @@ class LilypondGenerator(mp.MuseScoreParser):
         string += self.get_head()
         string.append("")
         string += self.get_header()
+        string.append("")
+        string += self.get_paper()
         string.append("")
         for s in self.staffs:
             string += self.get_staff_start(s)
