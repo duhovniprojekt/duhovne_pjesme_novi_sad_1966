@@ -160,6 +160,7 @@ parse_chord_names = {
     "o7": "dim7",
     "7(#5)": "7.5+",
     "(b5)": "dim",
+    "sus4": "4",
 }
 
 last_pitch = 60
