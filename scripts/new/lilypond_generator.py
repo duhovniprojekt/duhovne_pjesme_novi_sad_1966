@@ -4,6 +4,10 @@ import musescore_parser as mp
 import sys
 from fractions import Fraction
 
+#slurs (tie) are missing?
+#https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
+
+
 parser_key_signature = {
     '-7' : 'ces',
     '-6' : 'ges',
@@ -39,7 +43,7 @@ parser_duration_fractions = {
 }
 
 parser_tpc = {
-    '' : 'c',    
+    '' : 's',    
     '-1' : 'feses',
     '0' : 'ceses',
     '1' : 'geses',
@@ -153,10 +157,10 @@ parse_chord_names = {
     "m7(11)": "m7.11",
     "6": "6",
     "Maj9": "maj9",
-    "7(b9)": "7.9-",
+    "7(b9)": "9-",
     "m": "m",
     "0": "", #what is this
-    "7(#9)": "7.9+",
+    "7(#9)": "9+",
     "o7": "dim7",
     "7(#5)": "7.5+",
     "(b5)": "dim",
@@ -531,8 +535,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                     if isinstance(e, mp.Lyrics):
                         if e.no == no:
                             lyrics_found = True
-                            if skip_count:
-                                bar.append("\\repeat unfold %s { \\skip1 }\n" % (skip_count))
+                            if skip_count > 1:
+                                bar.append("\\repeat unfold %s { \\skip1 }\n" % (skip_count - 1))
                                 skip_count = 0
                                 
                             bar.append(e.text)
