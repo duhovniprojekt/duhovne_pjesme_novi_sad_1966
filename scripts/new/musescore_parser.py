@@ -9,7 +9,8 @@ from pprint import pprint
 @dataclass
 class Base:
     def __post_init__(self):
-        print("%%", self)
+        #print("%%", self)
+        pass
 
 @dataclass
 class Staff(Base):
@@ -258,5 +259,5 @@ class MuseScoreParser(XmlParser):
 
 if __name__ == "__main__":
     m = MuseScoreParser(sys.argv[1])
-    pprint(m.staffs)
+    #pprint(m.staffs)
 

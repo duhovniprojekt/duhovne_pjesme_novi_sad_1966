@@ -7,7 +7,7 @@ class XmlParser():
     indent = ['']
 
     def __init__(self, path):
-        print("%% init")
+        #print("%% init")
         doc = minidom.parse(path)
         node = doc.childNodes[0]
         self.parse_node(node)
@@ -18,13 +18,13 @@ class XmlParser():
             node)) == 0 else ' attr="' + str(self.get_attributes(node)) + '"'
         text = ' text="' + self.get_text(node) + \
             '"' if len(self.get_text(node)) else ""
-        print("%% ->", self.get_path() + text + attributes)
+        #print("%% ->", self.get_path() + text + attributes)
 
     def on_node_exit(self):
         pass
 
     def exit_node(self, node):
-        print("%% <-", self.get_path())
+        #print("%% <-", self.get_path())
         self.on_node_exit()
         self.indent.pop()
 
