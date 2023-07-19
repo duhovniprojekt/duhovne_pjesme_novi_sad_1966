@@ -251,8 +251,8 @@ class LilypondGenerator(mp.MuseScoreParser):
         string = []
         string.append("\header {")
         string.append("  titlex = \"Farmfest 2023\"")
-        string.append("  broj = \"1\"")
         poet_found = False
+        part_found = False
         for e in self.staffs[0].children:
             if isinstance(e, mp.VBox):
                 if e.style == "Title":
@@ -262,8 +262,13 @@ class LilypondGenerator(mp.MuseScoreParser):
                 elif e.style == "Lyricist":
                     string.append("  style = \"%s\"" % e.text)
                     poet_found = True
+                elif e.style == "Instrument Name (Part)":
+                    string.append("  broj = \"%s\"" % e.text)
+                    part_found = True
         if not poet_found:
             string.append("  style = \"\"")
+        if not part_found:
+            string.append("  broj = \"1\"")
         string.append("  %tagline = \\markup { \\override #'(font-name . \"JohnSans White Pro\") \\override #'(font-size . -3) { Izvorno: Name, Album } }")
 
         string.append("}")
