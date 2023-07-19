@@ -3,7 +3,7 @@
 from xml.dom import minidom
 import sys
 
-print_debug = False
+print_debug = True
 
 class XmlParser():
     indent = ['']
@@ -20,7 +20,7 @@ class XmlParser():
             node)) == 0 else ' attr="' + str(self.get_attributes(node)) + '"'
         text = ' text="' + self.get_text(node) + \
             '"' if len(self.get_text(node)) else ""
-        if print_debug: print("%% ->", self.get_path() + text + attributes)
+        if print_debug: print("%% ->", self.get_path() + repr(text) + attributes)
 
     def on_node_exit(self):
         pass

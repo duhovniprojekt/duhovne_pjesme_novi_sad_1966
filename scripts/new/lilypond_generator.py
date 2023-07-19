@@ -5,6 +5,7 @@ import sys
 from fractions import Fraction
 from dataclasses import dataclass, field
 from typing import Optional
+import re
 
 #https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
 
@@ -270,10 +271,12 @@ class LilypondGenerator(mp.MuseScoreParser):
                 elif e.style == "Composer":
                     string.append("  composer = \"%s\"" % e.text)
                 elif e.style == "Lyricist":
-                    string.append("  style = \"%s\"" % e.text)
+                    string.append("  poet = \"%s\"" % e.text)
+                    string.append("  %%style = \"%s\"" % e.text)
                     poet_found = True
                 elif e.style == "Instrument Name (Part)":
-                    string.append("  broj = \"%s\"" % e.text)
+                    string.append("  meter = \"%s\"" % e.text)
+                    string.append("  %%broj = \"%s\"" % e.text)
                     part_found = True
         if not poet_found:
             string.append("  style = \"\"")
@@ -549,7 +552,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                             lyric_handler.text = e.text
                             if e.syllabic in ["begin", "middle"]:
                                 lyric_handler.extender_line = "--"
-                            if e.ticks_f:
+                            if e.ticks_f and e.ticks:
                                 predicted_duration = - Fraction(e.ticks_f)
                                 lyric_handler.extender_line = "__"
                                 lyric_handler.extender_duration = abs(predicted_duration)
@@ -646,6 +649,23 @@ class LilypondGenerator(mp.MuseScoreParser):
         string.append("}")
         return string 
 
+    def get_tbox(self):
+        string = []
+        string.append("\\markup {")
+        string.append("  \\column {")
+        for e in self.staffs[0].children:
+            if isinstance(e, mp.TBox):
+                if e.style == "Frame":
+                    for line in e.text.split("\n"):
+                        line = line.strip()
+                        if re.match("\\d\\.", line):
+                            string.append("    \\line { \\bold %s }" % line)
+                        else:
+                            string.append("    \\line { %s }" % line)
+        string.append("  }")
+        string.append("}")
+        return string        
+
 
     def get_score(self):
         string = []
@@ -684,6 +704,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                 string += self.get_lyric(s, no)
                 string.append("")
         string += self.get_score()
+        string.append("")
+        string += self.get_tbox()
         return(string)
 
 if __name__ == "__main__":

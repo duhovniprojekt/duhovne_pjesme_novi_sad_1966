@@ -29,6 +29,11 @@ class VBox(Base):
     text: str
 
 @dataclass
+class TBox(Base):
+    style: str
+    text: str
+
+@dataclass
 class TimeSig(Base):
     sig_n: str
     sig_d: str
@@ -246,13 +251,19 @@ class MuseScoreParser(XmlParser):
             next_location_fractions = self.get_text_from_child(node, "next/location/fractions")
             prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
             self.add_to_measure(ChordNoteSpanner(attr_type, next_location_fractions, prev_location_fractions))
+            return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Tempo":
             tempo = self.get_text_from_child(node, "tempo")
             text =self.get_text_from_child(node, "text")
             text_sym = self.get_text_from_child(node,"text/sym")
             self.add_to_measure(Tempo(tempo, text, text_sym))
+            return False
 
+        if self.get_path() == "/museScore/Score/Staff/TBox/Text":
+            style = self.get_text_from_child(node, "style")
+            text = self.get_text_from_child(node, "text")
+            self.add_to_staff(TBox(style, text))
             return False
 
         return False
