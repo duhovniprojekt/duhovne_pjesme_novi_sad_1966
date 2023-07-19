@@ -3,10 +3,27 @@
 import musescore_parser as mp
 import sys
 from fractions import Fraction
+from dataclasses import dataclass, field
+from typing import Optional
 
 #slurs (tie) are missing?
 #https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
 
+
+@dataclass
+class Base:
+    def __post_init__(self):
+        print("%%", self)
+        pass
+
+@dataclass
+class LyricHandler(Base):
+    note_duration: Optional[Fraction] = None
+    text: Optional[str] = None
+    note_pitch: Optional[str] = None
+    extender_line: Optional[str] = None
+    extender_duration: Optional[Fraction] = None
+    slur: Optional[str] = None
 
 parser_key_signature = {
     '-7' : 'ces',
@@ -505,7 +522,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                     if isinstance(e, mp.Lyrics):
                         if e.no not in nos:
                             nos.append(e.no)
-        return nos
+        return sorted(nos)
 
     def fractions_swap_with_elements(self, bar):
         swaped_bar = []
@@ -528,54 +545,111 @@ class LilypondGenerator(mp.MuseScoreParser):
         return swaped_bar
 
     def get_lyric(self, staff, no):
-        string = []
-        string.append("lyric%s%s = \\lyricmode {" % (parser_name[staff.id], parser_name[no]))
-        skip_count = 0
-        lyrics_found = False
+        bars = []
         for sc in staff.children:
             if isinstance(sc, mp.Measure):
                 bar = []
+                lyric_handler = LyricHandler()
                 for e in sc.children:
-
                     if isinstance(e, mp.Lyrics):
                         if e.no == no:
-                            lyrics_found = True
-                            if skip_count > 1:
-                                bar.append("\\repeat unfold %s { \\skip1 }\n" % (skip_count - 1))
-                                skip_count = 0
-                                
-                            bar.append(e.text)
+                            lyric_handler.text = e.text
                             if e.syllabic in ["begin", "middle"]:
-                                bar.append("--")
+                                lyric_handler.extender_line = "--"
                             if e.ticks_f:
                                 predicted_duration = - Fraction(e.ticks_f)
-                                #bar.append(predicted_duration)
-                                #bar.append("__")
+                                lyric_handler.extender_line = "__"
+                                lyric_handler.extender_duration = abs(predicted_duration)
                     elif isinstance(e, mp.Chord):
+                        if lyric_handler.note_duration is not None:
+                            bar.append(lyric_handler)
+                            lyric_handler = LyricHandler()
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                         predicted_duration *= Fraction(parser_dots_fractions[e.dots])
-                        if not lyrics_found:
-                            skip_count += 1
-                        bar.append(predicted_duration)
+                        lyric_handler.note_pitch = "c"
+                        lyric_handler.note_duration = predicted_duration
                     elif isinstance(e, mp.Rest):
                         if e.duration_type == "measure":
+                            if lyric_handler.note_duration is not None:
+                                bar.append(lyric_handler)
+                                lyric_handler = LyricHandler()
                             predicted_duration = Fraction(e.duration)
-                            bar.append(predicted_duration)
+                            lyric_handler.note_pitch = "r"
+                            lyric_handler.note_duration = predicted_duration
                         else:
+                            if lyric_handler.note_duration is not None:
+                                bar.append(lyric_handler)
+                                lyric_handler = LyricHandler()
                             predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                             predicted_duration *= Fraction(parser_dots_fractions[e.dots])
-                            bar.append(predicted_duration)
+                            lyric_handler.note_pitch = "r"
+                            lyric_handler.note_duration = predicted_duration
 
-                bar = self.fractions_swap_with_elements(bar)
-                #bar = self.fractions_sum_neighbor(bar)
-                #bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
-                line = "  "
-                line += self.fractions_convert_bar_with_fractions_to_ly(bar, lyrics=True)
-                #line = str(bar)
-                #line += "|"
-                if len(line.strip()):
-                    string.append(line)
+                    if lyric_handler.note_duration is not None and lyric_handler.text is not None:
+                        bar.append(lyric_handler)
+                        lyric_handler = LyricHandler()
 
+                if lyric_handler.note_duration is not None:
+                    bar.append(lyric_handler)
+                    lyric_handler = LyricHandler()
+
+                bars.append(bar)
+
+        # add slurs for extender line and replace non text notes to rests
+        extender_duration = None
+        for bar in bars:
+            for b in bar:
+                if b.text is not None:
+                    if b.extender_duration:
+                        extender_duration = b.extender_duration
+                        b.slur = "("
+                else:
+                    if extender_duration is None:
+                        b.note_pitch = "r"
+                    else:
+                        extender_duration -= b.note_duration
+                        if extender_duration <= 0:
+                            extender_duration = None
+                            b.slur = ")"
+
+        string = []
+
+        #string.append("%%test%s%s = {" % (parser_name[staff.id], parser_name[no]))
+        #for bar in bars:
+        #    for b in bar:
+        #        line = "%  "
+        #        line += str(b)
+        #        string.append(line)
+        #    string.append("%  |")
+        #string.append("%}")
+        #string.append("")
+
+        string.append("aligner%s%s = \\relative {" % (parser_name[staff.id], parser_name[no]))
+        for bar in bars:
+            line = "  "
+            for b in bar:
+                line += b.note_pitch + parser_fraction_to_duration[str(b.note_duration)]
+                if b.slur:
+                    line += b.slur
+                line += " "
+            line += "|"
+            if len(line.strip()):
+                string.append(line)
+        string.append("}")
+        string.append("")
+        string.append("lyric%s%s = \\lyricmode {" % (parser_name[staff.id], parser_name[no]))
+        for bar in bars:
+            line = "  "
+            for b in bar:
+                if b.text is not None:
+                    line += b.text
+                    line += " "
+                if b.extender_line is not None:
+                    line += b.extender_line
+                    line += " "
+            line += "%|"
+            if len(line.strip()):
+                string.append(line)
         string.append("}")
         return string 
 
@@ -586,9 +660,14 @@ class LilypondGenerator(mp.MuseScoreParser):
         string.append("    <<")
         for staff in self.staffs:
             string.append("    \\new ChordNames { \\jazzChords \\harmony%s }" % parser_name[staff.id])
-            string.append("    \\new Staff { \\staff%s }" % parser_name[staff.id])
+            string.append("    \\new Staff {")
+            string.append("        <<")
+            string.append("        \\new Voice { \\staff%s }" % parser_name[staff.id])
             for no in self.get_lyric_nos(staff):
-                string.append("    \\addlyrics { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no]))
+                string.append("        \\new NullVoice = \"aligner%s%s\" { \\aligner%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
+                string.append("        \\new Lyrics \\lyricsto \"aligner%s%s\" { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
+        string.append("        >>")
+        string.append("    }")
         string.append("    >>")
         string.append("}")
         return(string)
