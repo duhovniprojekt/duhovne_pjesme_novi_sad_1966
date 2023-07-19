@@ -3,7 +3,7 @@
 from xml.dom import minidom
 import sys
 
-print_debug = True
+print_debug = False
 
 class XmlParser():
     indent = ['']

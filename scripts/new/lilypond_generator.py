@@ -6,14 +6,13 @@ from fractions import Fraction
 from dataclasses import dataclass, field
 from typing import Optional
 
-#slurs (tie) are missing?
 #https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
 
 
 @dataclass
 class Base:
     def __post_init__(self):
-        print("%%", self)
+        #print("%%", self)
         pass
 
 @dataclass
@@ -250,13 +249,7 @@ class LilypondGenerator(mp.MuseScoreParser):
         string.append("\\include \"deutsch.ly\"")
         string.append("jazzChords = {}")
         string.append("aFourL = {}")
-        string.append("markMoj = {}")
-        #string.append("markMoj =")
-        #string.append("#(define-music-function")
-        #string.append("  (letter)")
-        #string.append("  #{")
-        #string.append("  \\mark \\markup { \\box \\bold #letter }")
-        #string.append("  #})")
+        string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
         string.append("%\\include \"../config/include.ily\"")
         string.append("")
         string.append("\layout {")
@@ -433,8 +426,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                     elif isinstance(e, mp.RehearsalMark):
                         #text = "\\mark \\markup { \\box \\bold %s }" % e.text
                         #bar.append(text)
-                        #text = "\\markMojPoc { %s }" % e.text
-                        text = "\\markMoj"
+                        text = "\\markMoj \"%s\"" % e.text
+                        #text = "\\markMoj"
                         bar.append(text)
                         #text = "%\\markMojPonn"
                         #bar.append(text)
