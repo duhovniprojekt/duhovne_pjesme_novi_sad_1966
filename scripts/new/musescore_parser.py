@@ -97,6 +97,8 @@ class ChordNoteSpanner(Base):
     type: str
     next_location_fractions: str
     prev_location_fractions: str
+    next_location_measures: str
+    prev_location_measures: str
 
 @dataclass
 class ChordSpanner(Base):
@@ -255,7 +257,9 @@ class MuseScoreParser(XmlParser):
             attr_type = attr["type"]
             next_location_fractions = self.get_text_from_child(node, "next/location/fractions")
             prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
-            self.add_to_measure(ChordNoteSpanner(attr_type, next_location_fractions, prev_location_fractions))
+            next_location_measures = self.get_text_from_child(node, "next/location/measures")
+            prev_location_measures = self.get_text_from_child(node, "prev/location/measures")
+            self.add_to_measure(ChordNoteSpanner(attr_type, next_location_fractions, prev_location_fractions, next_location_measures, prev_location_measures))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Tempo":

@@ -171,17 +171,19 @@ parse_chord_names = {
     "m6": "m6",
     "dim6": "dim6",
     "dim7": "dim7",
+    "dim": "dim",
     "m7(11)": "m7.11",
     "6": "6",
     "Maj9": "maj9",
     "7(b9)": "9-",
     "m": "m",
-    "0": "", #what is this
+    "0": "m7.5-",
     "7(#9)": "9+",
     "o7": "dim7",
     "7(#5)": "7.5+",
     "(b5)": "dim",
     "sus4": "sus4",
+    "7sus4": "sus4.7"
 }
 
 last_pitch = 60
@@ -248,7 +250,7 @@ class LilypondGenerator(mp.MuseScoreParser):
         string = []
         string.append("\\version \"2.24.1\"")
         string.append("\\include \"deutsch.ly\"")
-        string.append("jazzChords = {}")
+        string.append("jazzChords = { \\semiGermanChords }")
         string.append("aFourL = {}")
         string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
         string.append("%\\include \"../config/include.ily\"")
@@ -416,7 +418,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                         string.append("  \\key %s \\major" % parser_tpc[tpc_value])
                     elif isinstance(e, mp.ChordNoteSpanner):
                         if e.type == "Tie":
-                            if e.next_location_fractions:
+                            if e.next_location_fractions or e.next_location_measures:
                                 bar.append("~")
                     elif isinstance(e, mp.ChordSpanner):
                         if e.type == "Slur":
@@ -594,23 +596,23 @@ class LilypondGenerator(mp.MuseScoreParser):
         # add slurs for extender line and replace non text notes to rests
         extender_duration = None
         for bar in bars:
-            print("|")
+            #print("|")
             for b in bar:
-                print("  ", b)
+                #print("  ", b)
                 if b.text is not None:
                     if b.extender_duration:
                         extender_duration = b.extender_duration - b.note_duration
-                        print(extender_duration, "adding (")
+                        #print(extender_duration, "adding (")
                         b.slur = "("
                 else:
                     if extender_duration is None:
                         b.note_pitch = "r"
                     else:
                         extender_duration -= b.note_duration
-                        print(extender_duration, "calculating")
+                        #print(extender_duration, "calculating")
                         if extender_duration < 0:
                             extender_duration = None
-                            print("adding )")
+                            #print("adding )")
                             b.slur = ")"
 
         string = []
