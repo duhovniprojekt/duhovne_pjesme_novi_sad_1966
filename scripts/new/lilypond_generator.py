@@ -252,8 +252,8 @@ class LilypondGenerator(mp.MuseScoreParser):
         string.append("\\include \"deutsch.ly\"")
         string.append("jazzChords = { \\semiGermanChords }")
         string.append("aFourL = {}")
-        string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
         string.append("%\\include \"../config/include.ily\"")
+        string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
         string.append("")
         string.append("\layout {")
         string.append("  indent = 0")
@@ -263,7 +263,7 @@ class LilypondGenerator(mp.MuseScoreParser):
     def get_header(self):
         string = []
         string.append("\header {")
-        string.append("  titlex = \"Farmfest 2023\"")
+        string.append("  titlex = \"Pjevajte Jahvi\"")
         poet_found = False
         part_found = False
         for e in self.staffs[0].children:
@@ -273,12 +273,12 @@ class LilypondGenerator(mp.MuseScoreParser):
                 elif e.style == "Composer":
                     string.append("  composer = \"%s\"" % e.text)
                 elif e.style == "Lyricist":
-                    string.append("  poet = \"%s\"" % e.text)
-                    string.append("  %%style = \"%s\"" % e.text)
+                    string.append("  %%poet = \"%s\"" % e.text)
+                    string.append("  style = \"%s\"" % e.text)
                     poet_found = True
                 elif e.style == "Instrument Name (Part)":
-                    string.append("  meter = \"%s\"" % e.text)
-                    string.append("  %%broj = \"%s\"" % e.text)
+                    string.append("  %%meter = \"%s\"" % e.text)
+                    string.append("  broj = \"%s\"" % e.text)
                     part_found = True
         if not poet_found:
             string.append("  style = \"\"")
