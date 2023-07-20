@@ -5,11 +5,12 @@ from xml_parser import XmlParser
 from dataclasses import dataclass, field
 from pprint import pprint
 
+print_debug = False
 
 @dataclass
 class Base:
     def __post_init__(self):
-        #print("%%", self)
+        if print_debug: print("%%", self)
         pass
 
 @dataclass
@@ -102,6 +103,8 @@ class ChordSpanner(Base):
     type: str
     next_location_fractions: str
     prev_location_fractions: str
+    next_location_measures: str
+    prev_location_measures: str
 
 @dataclass
 class VoltaSpanner(Base):
@@ -242,7 +245,9 @@ class MuseScoreParser(XmlParser):
             attr_type = attr["type"]
             next_location_fractions = self.get_text_from_child(node, "next/location/fractions")
             prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
-            self.add_to_measure(ChordSpanner(attr_type, next_location_fractions, prev_location_fractions))
+            next_location_measures = self.get_text_from_child(node, "next/location/measures")
+            prev_location_measures = self.get_text_from_child(node, "prev/location/measures")
+            self.add_to_measure(ChordSpanner(attr_type, next_location_fractions, prev_location_fractions, next_location_measures, prev_location_measures))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Chord/Note/Spanner":

@@ -420,9 +420,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                                 bar.append("~")
                     elif isinstance(e, mp.ChordSpanner):
                         if e.type == "Slur":
-                            if e.next_location_fractions:
+                            if e.next_location_fractions or e.next_location_measures:
                                 bar.append("(")
-                            elif e.prev_location_fractions:
+                            elif e.prev_location_fractions or e.prev_location_measures:
                                 bar.append(")")
                     elif isinstance(e, mp.BarLine):
                         bar.append("\\bar \"%s\"" % parser_barline[e.subtype])
@@ -594,18 +594,23 @@ class LilypondGenerator(mp.MuseScoreParser):
         # add slurs for extender line and replace non text notes to rests
         extender_duration = None
         for bar in bars:
+            print("|")
             for b in bar:
+                print("  ", b)
                 if b.text is not None:
                     if b.extender_duration:
-                        extender_duration = b.extender_duration
+                        extender_duration = b.extender_duration - b.note_duration
+                        print(extender_duration, "adding (")
                         b.slur = "("
                 else:
                     if extender_duration is None:
                         b.note_pitch = "r"
                     else:
                         extender_duration -= b.note_duration
-                        if extender_duration <= 0:
+                        print(extender_duration, "calculating")
+                        if extender_duration < 0:
                             extender_duration = None
+                            print("adding )")
                             b.slur = ")"
 
         string = []
@@ -679,8 +684,12 @@ class LilypondGenerator(mp.MuseScoreParser):
             for no in self.get_lyric_nos(staff):
                 string.append("        \\new NullVoice = \"aligner%s%s\" { \\aligner%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
                 string.append("        \\new Lyrics \\lyricsto \"aligner%s%s\" { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
-        string.append("        >>")
-        string.append("    }")
+            string.append("        >>")
+            string.append("    }")
+            #string.append("    \\new Staff {")
+            #for no in self.get_lyric_nos(staff):
+            #    string.append("        \\new Voice = \"aligner%s%s\" { \\transpose c c'' \\aligner%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
+            #string.append("    }")
         string.append("    >>")
         string.append("}")
         return(string)
