@@ -551,7 +551,11 @@ class LilypondGenerator(mp.MuseScoreParser):
                 for e in sc.children:
                     if isinstance(e, mp.Lyrics):
                         if e.no == no:
-                            lyric_handler.text = e.text
+                            print(repr(e.text))
+                            if "\xa0" in e.text:
+                                lyric_handler.text = "\"%s\"" % e.text
+                            else:
+                                lyric_handler.text = e.text
                             if e.syllabic in ["begin", "middle"]:
                                 lyric_handler.extender_line = "--"
                             if e.ticks_f and e.ticks:
@@ -657,18 +661,33 @@ class LilypondGenerator(mp.MuseScoreParser):
         return string 
 
     def get_tbox(self):
-        string = []
-        string.append("\\markup {")
-        string.append("  \\column {")
+        stanzas = []
+        lyrics = []
         for e in self.staffs[0].children:
             if isinstance(e, mp.TBox):
                 if e.style == "Frame":
+                    line_count = 0
                     for line in e.text.split("\n"):
                         line = line.strip()
-                        if re.match("\\d\\.", line):
-                            string.append("    \\line { \\bold %s }" % line)
+                        if len(line) > 0:
+                            if re.match("\\d\\.", line):
+                                stanzas.append("    \\line { \\bold %s }" % line)
+                            else:
+                                line_count += 1
+                                lyrics.append("    \\line { %s }" % line)
                         else:
-                            string.append("    \\line { %s }" % line)
+                            stanzas.append("    \\vspace #%s" % (line_count))
+                            line_count = 0
+                            lyrics.append("    \\vspace #1")
+
+        string = []
+        string.append("\\markup {")
+        string.append("  \\column {")
+        string += stanzas
+        string.append("  }")
+        string.append("  \\hspace #1")
+        string.append("  \\column {")
+        string += lyrics
         string.append("  }")
         string.append("}")
         return string        
