@@ -5,7 +5,7 @@ from xml_parser import XmlParser
 from dataclasses import dataclass, field
 from pprint import pprint
 
-print_debug = False
+print_debug = True
 
 @dataclass
 class Base:
@@ -121,6 +121,18 @@ class Tempo(Base):
     tempo: str
     text: str
     text_sym: str
+
+@dataclass
+class Tuplet(Base):
+    normal_notes: str
+    actual_notes: str
+    base_note: str
+    number_style: str
+    number_text: str
+
+@dataclass
+class EndTuplet(Base):
+    pass
 
 class MuseScoreParser(XmlParser):
     staffs = []
@@ -274,6 +286,21 @@ class MuseScoreParser(XmlParser):
             text = self.get_text_from_child(node, "text")
             self.add_to_staff(TBox(style, text))
             return False
+
+        if self.get_path() == "/museScore/Score/Staff/Measure/voice/Tuplet":
+            normal_notes = self.get_text_from_child(node, "normalNotes")
+            actual_notes = self.get_text_from_child(node, "actualNotes")
+            base_note = self.get_text_from_child(node, "baseNote")
+            number_style = self.get_text_from_child(node, "Number/style")
+            number_text = self.get_text_from_child(node, "Number/text")
+            self.add_to_measure(Tuplet(normal_notes, actual_notes, base_note, number_style, number_text))
+            return False
+
+        if self.get_path() == "/museScore/Score/Staff/Measure/voice/endTuplet":
+            self.add_to_measure(EndTuplet())
+            return False
+
+
 
         return False
 

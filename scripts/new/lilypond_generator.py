@@ -13,7 +13,7 @@ import re
 @dataclass
 class Base:
     def __post_init__(self):
-        #print("%%", self)
+        print("%%", self)
         pass
 
 @dataclass
@@ -352,16 +352,14 @@ class LilypondGenerator(mp.MuseScoreParser):
                     line += parser_fraction_to_duration[str(e)]
                     line += " "
             else:
-                if e in ["--", "__", "~", "(", ")"]:
-                    line += e
-                    if lyrics:
-                        line += " "
-                else:
-                    line += e
-                    if lyrics:
-                        line += " "
-                    if "bar" in e or "mark" in e or "clef" in e or "repeat" in e:
-                        line += " "
+                line += e
+                if lyrics:
+                    line += " "
+                if "bar" in e or "mark" in e or "clef" in e or "repeat" in e:
+                    line += " "
+                if "{" in e or "}" in e:
+                    line += " "
+
         return line
 
     def fractions_convert_harmony_bar_with_fractions_to_ly(self, bar):
@@ -453,6 +451,13 @@ class LilypondGenerator(mp.MuseScoreParser):
                         elif e.prev_location_measures:
                             text = "\\set Score.repeatCommands = #\'((volta #f))"
                             bar.append(text)
+                    elif isinstance(e, mp.Tuplet):
+                        text = "\\tuplet %s/%s {" % (e.actual_notes, e.normal_notes)
+                        bar.append(text)
+                    elif isinstance(e, mp.EndTuplet):
+                        text = "}"
+                        bar.append(text)
+
                 #line += str(bar) + "\n  "
                 if sc.len:
                     line += "\\partial %s" % parser_fraction_to_duration[sc.len]
@@ -470,6 +475,16 @@ class LilypondGenerator(mp.MuseScoreParser):
 
     def get_harmony(self, staff):
         string = []
+
+        #harmony_found = False
+        #for sc in staff.children:
+        #    if isinstance(sc, mp.Measure):
+        #        for e in sc.children:
+        #            if isinstance(e, mp.Harmony):
+        #                harmony_found = True
+        #if not harmony_found:
+        #    return string
+
         string.append("harmony%s = \chordmode  {" % parser_name[staff.id])
         time_signature = None
         for sc in staff.children:
@@ -551,7 +566,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                 for e in sc.children:
                     if isinstance(e, mp.Lyrics):
                         if e.no == no:
-                            print(repr(e.text))
+                            #print(repr(e.text))
                             if "\xa0" in e.text:
                                 lyric_handler.text = "\"%s\"" % e.text
                             else:
@@ -661,6 +676,16 @@ class LilypondGenerator(mp.MuseScoreParser):
         return string 
 
     def get_tbox(self):
+        string = []
+
+        #tbox_found = False
+        #for e in self.staffs[0].children:
+        #    if isinstance(e, mp.TBox):
+        #        tbox_found = True
+        #        break
+        #if not tbox_found:
+        #    return string
+
         stanzas = []
         lyrics = []
         for e in self.staffs[0].children:
@@ -680,7 +705,6 @@ class LilypondGenerator(mp.MuseScoreParser):
                             line_count = 0
                             lyrics.append("    \\vspace #1")
 
-        string = []
         string.append("\\markup {")
         string.append("  \\column {")
         string += stanzas
