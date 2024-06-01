@@ -5,7 +5,7 @@ from xml_parser import XmlParser
 from dataclasses import dataclass, field
 from pprint import pprint
 
-print_debug = True
+print_debug = False
 
 @dataclass
 class Base:

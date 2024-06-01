@@ -13,7 +13,7 @@ import re
 @dataclass
 class Base:
     def __post_init__(self):
-        print("%%", self)
+        #print("%%", self)
         pass
 
 @dataclass
@@ -24,6 +24,10 @@ class LyricHandler(Base):
     extender_line: Optional[str] = None
     extender_duration: Optional[Fraction] = None
     slur: Optional[str] = None
+    tuplet: Optional[str] = None
+    tuplet_after: bool = False
+    tuplet_end: Optional[str] = None
+    tuplet_end_after: bool = False
 
 parser_key_signature = {
     '-7' : 'ces',
@@ -143,6 +147,7 @@ parser_fraction_to_duration = {
 
     "1/8": "8",
     "3/8": "4.",
+    "5/8": "4 ~ 16",
     "7/8": "2..",
 
     "1/16": "16",
@@ -183,7 +188,16 @@ parse_chord_names = {
     "7(#5)": "7.5+",
     "(b5)": "dim",
     "sus4": "sus4",
-    "7sus4": "sus4.7"
+    "7sus4": "sus4.7",
+    "m9": "m7.9",
+    "maj7": "maj7",
+    "9(b5)": "9.5-",
+    "aug7(#9)": "aug7.9+",
+    "sus": "sus4",
+    "aug(#9)": "aug7.9+",
+    "7(b5)": "7.5-",
+    "9": "9",
+    "maj9": "maj9",
 }
 
 last_pitch = 60
@@ -601,6 +615,14 @@ class LilypondGenerator(mp.MuseScoreParser):
                             predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                             lyric_handler.note_pitch = "r"
                             lyric_handler.note_duration = predicted_duration
+                    elif isinstance(e, mp.Tuplet):
+                        lyric_handler.tuplet = "\\tuplet %s/%s {" % (e.actual_notes, e.normal_notes)
+                        if lyric_handler.note_pitch:
+                            lyric_handler.tuplet_after = True
+                    elif isinstance(e, mp.EndTuplet):
+                        lyric_handler.tuplet_end = "}"
+                        if lyric_handler.note_pitch:
+                            lyric_handler.tuplet_end_after = True
 
                     if lyric_handler.note_duration is not None and lyric_handler.text is not None:
                         bar.append(lyric_handler)
@@ -650,9 +672,17 @@ class LilypondGenerator(mp.MuseScoreParser):
         for bar in bars:
             line = "  "
             for b in bar:
+                if b.tuplet and not b.tuplet_after:
+                    line += b.tuplet
+                if b.tuplet_end and not b.tuplet_end_after:
+                    line += b.tuplet_end
                 line += b.note_pitch + parser_fraction_to_duration[str(b.note_duration)]
                 if b.slur:
                     line += b.slur
+                if b.tuplet and b.tuplet_after:
+                    line += b.tuplet
+                if b.tuplet_end and b.tuplet_end_after:
+                    line += b.tuplet_end
                 line += " "
             line += "|"
             if len(line.strip()):
