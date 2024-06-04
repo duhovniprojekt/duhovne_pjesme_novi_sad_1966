@@ -14,6 +14,7 @@ LILYPOND_VERSION = "2.24.1"
 CUSTOM_CONFIG = False
 ORDINAL_NUMBER = None
 LEFT_PAGE = True
+SET_STANZA = False
 
 app = typer.Typer()
 
@@ -134,6 +135,17 @@ parser_name = {
     "6": "Six",
 }
 
+stanza_number = {
+    "": "1",
+    "0": "1",
+    "1": "2",
+    "2": "3",
+    "3": "4",
+    "4": "5",
+    "5": "6",
+    "6": "7",
+}
+
 parser_dots_fractions = {
     "": 1,
     "1": 1 + 1/2,
@@ -153,6 +165,8 @@ parser_fraction_to_duration = {
     "3/4": "2.",
 
     "1/8": "8",
+    "2/8": "4",
+    "4/8": "2",
     "3/8": "4.",
     "7/8": "2..",
 
@@ -462,7 +476,11 @@ class LilypondGenerator(mp.MuseScoreParser):
                         bar.append("\\bar \"%s\"" % parser_barline[e.subtype])
                     elif isinstance(e, mp.RehearsalMark):
                         #text = "\\markMoj \"%s\"" % e.text
-                        text = "\\markMoj"
+                        if "?" in e.text:
+                            mark_variable_name = e.text.split("?")[1]
+                            text = "\\%s" % mark_variable_name
+                        else:
+                            text = "\\markMoj"
                         bar.append(text)
                     elif isinstance(e, mp.Clef):
                         if e.concert_clef_type:
@@ -487,6 +505,10 @@ class LilypondGenerator(mp.MuseScoreParser):
                     elif isinstance(e, mp.EndTuplet):
                         text = "}"
                         bar.append(text)
+                    elif isinstance(e, mp.StartRepeat):
+                        bar.append("\\bar \"%s\"" % parser_barline["startRepeat"])
+                    elif isinstance(e, mp.StaffText):
+                        bar.append("%%  %s" % e.text)
 
                 #line += str(bar) + "\n  "
                 if sc.len:
@@ -700,12 +722,15 @@ class LilypondGenerator(mp.MuseScoreParser):
                 if b.tuplet_end and b.tuplet_end_after:
                     line += b.tuplet_end
                 line += " "
+                #print(b, line)
             line += "|"
             if len(line.strip()):
                 string.append(line)
         string.append("}")
         string.append("")
         string.append("lyric%s%s = \\lyricmode {" % (parser_name[staff.id], parser_name[no]))
+        if SET_STANZA:
+            string.append("  \\set stanza = \"%s.\"" % (stanza_number[no]))
         for bar in bars:
             line = "  "
             for b in bar:
@@ -809,12 +834,13 @@ class LilypondGenerator(mp.MuseScoreParser):
         return(string)
 
 @app.command()
-def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None):
-    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE
+def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, set_stanza: Optional[bool] = None):
+    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, SET_STANZA
     if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
     if custom_config is not None: CUSTOM_CONFIG = custom_config
     if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
     if left_page is not None: LEFT_PAGE = left_page
+    if set_stanza is not None: SET_STANZA = set_stanza
     lg = LilypondGenerator(mscx_input)
     if ly_output is None:
         print("\n".join(lg.get_file()))

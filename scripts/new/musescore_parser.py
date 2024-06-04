@@ -134,6 +134,14 @@ class Tuplet(Base):
 class EndTuplet(Base):
     pass
 
+@dataclass
+class StartRepeat(Base):
+    pass
+
+@dataclass
+class StaffText(Base):
+    text: str
+
 class MuseScoreParser(XmlParser):
     staffs = []
 
@@ -300,6 +308,14 @@ class MuseScoreParser(XmlParser):
             self.add_to_measure(EndTuplet())
             return False
 
+        if self.get_path() == "/museScore/Score/Staff/Measure/startRepeat":
+            self.add_to_measure(StartRepeat())
+            return False
+
+        if self.get_path() == "/museScore/Score/Staff/Measure/voice/StaffText":
+            text = self.get_text_from_child(node, "text")
+            self.add_to_measure(StaffText(text))
+            return False
 
 
         return False
