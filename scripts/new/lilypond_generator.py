@@ -6,9 +6,16 @@ from fractions import Fraction
 from dataclasses import dataclass, field
 from typing import Optional
 import re
+import typer
 
 #https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
 
+LILYPOND_VERSION = "2.24.1"
+CUSTOM_CONFIG = False
+ORDINAL_NUMBER = None
+LEFT_PAGE = True
+
+app = typer.Typer()
 
 @dataclass
 class Base:
@@ -261,28 +268,37 @@ def get_pitch(pitch, tpc):
 class LilypondGenerator(mp.MuseScoreParser):
     def get_head(self):
         string = []
-        string.append("\\version \"2.24.1\"")
+        string.append("\\version \"%s\"" % LILYPOND_VERSION)
         string.append("\\include \"deutsch.ly\"")
         string.append("jazzChords = { \\semiGermanChords }")
-        string.append("aFourL = {}")
-        string.append("%\\include \"../config/include.ily\"")
-        string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
+        if LEFT_PAGE:
+            string.append("aFourL = {}")
+        else:
+            string.append("aFourR = {}")
+        if CUSTOM_CONFIG:
+            string.append("\\include \"include.ily\"")
+            string.append("%markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
+        else:
+            string.append("%\\include \"include.ily\"")
+            string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
         string.append("")
-        string.append("\layout {")
+        string.append("\\layout {")
         string.append("  indent = 0")
         string.append("}")
         return string
 
     def get_header(self):
         string = []
-        string.append("\header {")
-        string.append("  titlex = \"Pjevajte Jahvi\"")
+        string.append("\\header {")
+        #string.append("  titlex = \"Pjevajte Jahvi\"")
         poet_found = False
         part_found = False
         for e in self.staffs[0].children:
             if isinstance(e, mp.VBox):
                 if e.style == "Title":
                     string.append(f"  title = \"%s\"" % e.text.upper())
+                if e.style == "Subtitle":
+                    string.append(f"  titlex = \"%s\"" % e.text)
                 elif e.style == "Composer":
                     string.append("  composer = \"%s\"" % e.text)
                 elif e.style == "Lyricist":
@@ -296,7 +312,7 @@ class LilypondGenerator(mp.MuseScoreParser):
         if not poet_found:
             string.append("  style = \"\"")
         if not part_found:
-            string.append("  broj = \"1\"")
+            string.append("  broj = \"%s\"" % ORDINAL_NUMBER)
         string.append("  %tagline = \\markup { \\override #'(font-name . \"JohnSans White Pro\") \\override #'(font-size . -3) { Izvorno: Name, Album } }")
 
         string.append("}")
@@ -305,7 +321,10 @@ class LilypondGenerator(mp.MuseScoreParser):
     def get_paper(self):
         string = []
         string.append("\\paper {")
-        string.append("  \\aFourL")
+        if LEFT_PAGE:
+            string.append("  \\aFourL")
+        else:
+            string.append("  \\aFourR")
         string.append("  %min-systems-per-page = #7")
         string.append("  %annotate-spacing = ##t")
         string.append("  %system-system-spacing.padding = #3.2")
@@ -368,8 +387,10 @@ class LilypondGenerator(mp.MuseScoreParser):
                 line += e
                 if lyrics:
                     line += " "
-                if "bar" in e or "mark" in e or "clef" in e or "repeat" in e:
+                if "bar" in e or "repeat" in e:
                     line += " "
+                if "clef" in e or "mark" in e:
+                    line += "\n  "
                 if "{" in e or "}" in e:
                     line += " "
 
@@ -440,13 +461,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                     elif isinstance(e, mp.BarLine):
                         bar.append("\\bar \"%s\"" % parser_barline[e.subtype])
                     elif isinstance(e, mp.RehearsalMark):
-                        #text = "\\mark \\markup { \\box \\bold %s }" % e.text
-                        #bar.append(text)
-                        text = "\\markMoj \"%s\"" % e.text
-                        #text = "\\markMoj"
+                        #text = "\\markMoj \"%s\"" % e.text
+                        text = "\\markMoj"
                         bar.append(text)
-                        #text = "%\\markMojPonn"
-                        #bar.append(text)
                     elif isinstance(e, mp.Clef):
                         if e.concert_clef_type:
                             text = "\\clef %s" % parser_clefs[e.concert_clef_type]
@@ -480,10 +497,10 @@ class LilypondGenerator(mp.MuseScoreParser):
                     line += "\\bar \"%s\"" % parse_measure_end_repeat[sc.end_repeat]
                     line += " "
                 line += "|"
-                #if has_break:
-                #    line += " \\break"
+                if has_break:
+                    line += " \\break"
                 string.append(line)
-        return string        
+        return string
 
 
     def get_harmony(self, staff):
@@ -498,7 +515,7 @@ class LilypondGenerator(mp.MuseScoreParser):
         #if not harmony_found:
         #    return string
 
-        string.append("harmony%s = \chordmode  {" % parser_name[staff.id])
+        string.append("harmony%s = \\chordmode  {" % parser_name[staff.id])
         time_signature = None
         for sc in staff.children:
             if isinstance(sc, mp.Measure):
@@ -791,6 +808,19 @@ class LilypondGenerator(mp.MuseScoreParser):
         string += self.get_tbox()
         return(string)
 
+@app.command()
+def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None):
+    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE
+    if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
+    if custom_config is not None: CUSTOM_CONFIG = custom_config
+    if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
+    if left_page is not None: LEFT_PAGE = left_page
+    lg = LilypondGenerator(mscx_input)
+    if ly_output is None:
+        print("\n".join(lg.get_file()))
+    else:
+        with open(ly_output, "w") as f:
+            f.writelines("\n".join(lg.get_file()))
+
 if __name__ == "__main__":
-    lg = LilypondGenerator(sys.argv[1])
-    print("\n".join(lg.get_file()))
+    app()
