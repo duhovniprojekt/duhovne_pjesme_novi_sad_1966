@@ -15,6 +15,7 @@ CUSTOM_CONFIG = False
 ORDINAL_NUMBER = None
 LEFT_PAGE = True
 SET_STANZA = False
+POINT_AND_CLICK = False
 
 app = typer.Typer()
 
@@ -295,6 +296,11 @@ class LilypondGenerator(mp.MuseScoreParser):
         else:
             string.append("%\\include \"include.ily\"")
             string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
+        if POINT_AND_CLICK:
+            string.append("\\pointAndClickOff")
+        else:
+            string.append("%\\pointAndClickOff")
+
         string.append("")
         string.append("\\layout {")
         string.append("  indent = 0")
@@ -834,13 +840,14 @@ class LilypondGenerator(mp.MuseScoreParser):
         return(string)
 
 @app.command()
-def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, set_stanza: Optional[bool] = None):
-    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, SET_STANZA
+def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, set_stanza: Optional[bool] = None, point_and_click: Optional[bool] = None):
+    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, SET_STANZA, POINT_AND_CLICK
     if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
     if custom_config is not None: CUSTOM_CONFIG = custom_config
     if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
     if left_page is not None: LEFT_PAGE = left_page
     if set_stanza is not None: SET_STANZA = set_stanza
+    if point_and_click is not None: POINT_AND_CLICK = point_and_click
     lg = LilypondGenerator(mscx_input)
     if ly_output is None:
         print("\n".join(lg.get_file()))
