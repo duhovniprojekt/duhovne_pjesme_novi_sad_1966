@@ -16,6 +16,7 @@ ORDINAL_NUMBER = None
 LEFT_PAGE = True
 SET_STANZA = False
 POINT_AND_CLICK = False
+COMMENT_TEMPO = True
 
 app = typer.Typer()
 
@@ -449,7 +450,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                     if isinstance(e, mp.TimeSig):
                         string.append("  \\time %s/%s" % (e.sig_n, e.sig_d))
                     elif isinstance(e, mp.Tempo):
-                        string.append("  \\tempo 4 = %s" % int((60 * float(e.tempo))))
+                        if not COMMENT_TEMPO:
+                            string.append("  \\tempo 4 = %s" % int((60 * float(e.tempo))))
                     elif isinstance(e, mp.Rest):
                         if e.duration_type == "measure":
                             bar.append("r")
@@ -840,14 +842,15 @@ class LilypondGenerator(mp.MuseScoreParser):
         return(string)
 
 @app.command()
-def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, set_stanza: Optional[bool] = None, point_and_click: Optional[bool] = None):
-    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, SET_STANZA, POINT_AND_CLICK
+def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, set_stanza: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None):
+    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, SET_STANZA, POINT_AND_CLICK, COMMENT_TEMPO
     if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
     if custom_config is not None: CUSTOM_CONFIG = custom_config
     if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
     if left_page is not None: LEFT_PAGE = left_page
     if set_stanza is not None: SET_STANZA = set_stanza
     if point_and_click is not None: POINT_AND_CLICK = point_and_click
+    if comment_tempo is not None: COMMENT_TEMPO = comment_tempo
     lg = LilypondGenerator(mscx_input)
     if ly_output is None:
         print("\n".join(lg.get_file()))
