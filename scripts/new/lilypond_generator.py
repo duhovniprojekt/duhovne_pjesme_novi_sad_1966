@@ -452,6 +452,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                     elif isinstance(e, mp.Tempo):
                         if not COMMENT_TEMPO:
                             string.append("  \\tempo 4 = %s" % int((60 * float(e.tempo))))
+                        else:
+                            string.append("  %\\tempo 4 = %s" % int((60 * float(e.tempo))))
                     elif isinstance(e, mp.Rest):
                         if e.duration_type == "measure":
                             bar.append("r")
