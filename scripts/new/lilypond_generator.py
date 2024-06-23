@@ -220,6 +220,7 @@ parse_chord_names = {
     "7(b5)": "7.5-",
     "9": "9",
     "maj9": "maj9",
+    "mM7": "m7+",
 }
 
 last_pitch = 60
