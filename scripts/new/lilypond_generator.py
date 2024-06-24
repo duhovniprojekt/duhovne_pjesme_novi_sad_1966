@@ -631,7 +631,16 @@ class LilypondGenerator(mp.MuseScoreParser):
                         if e.no == no:
                             #print(repr(e.text))
                             if "\xa0" in e.text:
-                                lyric_handler.text = "\"%s\"" % e.text
+                                x = re.search(r"(\d.)\s(.*)", e.text)
+                                if x is not None and len(x.groups()) == 2:
+                                    if " " in x.groups()[1]:
+                                        stanza_text = r'\set stanza = '
+                                        lyric_handler.text = "%s\"%s\" \"%s\"" % (stanza_text, x.groups()[0], x.groups()[1])
+                                    else:
+                                        stanza_text = r'\set stanza = '
+                                        lyric_handler.text = "%s\"%s\" %s" % (stanza_text, x.groups()[0], x.groups()[1])
+                                else:
+                                    lyric_handler.text = "\"%s\"" % e.text
                             else:
                                 lyric_handler.text = e.text
                             if e.syllabic in ["begin", "middle"]:
