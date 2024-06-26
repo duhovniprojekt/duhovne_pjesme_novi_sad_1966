@@ -14,7 +14,6 @@ LILYPOND_VERSION = "2.24.1"
 CUSTOM_CONFIG = False
 ORDINAL_NUMBER = None
 LEFT_PAGE = True
-SET_STANZA = False
 POINT_AND_CLICK = False
 COMMENT_TEMPO = True
 
@@ -749,8 +748,6 @@ class LilypondGenerator(mp.MuseScoreParser):
         string.append("}")
         string.append("")
         string.append("lyric%s%s = \\lyricmode {" % (parser_name[staff.id], parser_name[no]))
-        if SET_STANZA:
-            string.append("  \\set stanza = \"%s.\"" % (stanza_number[no]))
         for bar in bars:
             line = "  "
             for b in bar:
@@ -854,13 +851,12 @@ class LilypondGenerator(mp.MuseScoreParser):
         return(string)
 
 @app.command()
-def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, set_stanza: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None):
-    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, SET_STANZA, POINT_AND_CLICK, COMMENT_TEMPO
+def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None):
+    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO
     if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
     if custom_config is not None: CUSTOM_CONFIG = custom_config
     if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
     if left_page is not None: LEFT_PAGE = left_page
-    if set_stanza is not None: SET_STANZA = set_stanza
     if point_and_click is not None: POINT_AND_CLICK = point_and_click
     if comment_tempo is not None: COMMENT_TEMPO = comment_tempo
     lg = LilypondGenerator(mscx_input)
