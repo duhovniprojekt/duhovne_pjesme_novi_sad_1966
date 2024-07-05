@@ -17,7 +17,7 @@ LEFT_PAGE = True
 POINT_AND_CLICK = False
 COMMENT_TEMPO = True
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 @dataclass
 class Base:
@@ -169,6 +169,7 @@ parser_fraction_to_duration = {
     "2/8": "4",
     "4/8": "2",
     "3/8": "4.",
+    "5/8": "8*5",
     "6/8": "2.",
     "7/8": "2..",
 
@@ -857,6 +858,7 @@ class LilypondGenerator(mp.MuseScoreParser):
 
 @app.command()
 def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None):
+    print(f"Working on {mscx_input}")
     global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO
     if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
     if custom_config is not None: CUSTOM_CONFIG = custom_config
