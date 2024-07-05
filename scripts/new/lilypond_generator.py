@@ -16,6 +16,7 @@ ORDINAL_NUMBER = None
 LEFT_PAGE = True
 POINT_AND_CLICK = False
 COMMENT_TEMPO = True
+ONE_PAGE_BREAKING = False
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
@@ -355,7 +356,10 @@ class LilypondGenerator(mp.MuseScoreParser):
         string.append("  %min-systems-per-page = #7")
         string.append("  %annotate-spacing = ##t")
         string.append("  %system-system-spacing.padding = #3.2")
-        string.append("  %page-breaking = #ly:one-page-breaking")
+        if ONE_PAGE_BREAKING:
+            string.append("  page-breaking = #ly:one-page-breaking")
+        else:
+            string.append("  %page-breaking = #ly:one-page-breaking")
         string.append("  %last-bottom-spacing.minimum-distance = #8")
         string.append("}")
         return string
@@ -636,10 +640,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                         if e.no == no:
                             #print(repr(e.text))
                             if '"' in e.text:
-                                print(repr(e.text))
                                 e.text = e.text.replace('"', '\\"')
                                 e.text = f"\"{e.text}\""
-                                print(repr(e.text))
                             if "\xa0" in e.text:
                                 x = re.search(r"(\d.)\s(.*)", e.text)
                                 if x is not None and len(x.groups()) == 2:
@@ -862,15 +864,16 @@ class LilypondGenerator(mp.MuseScoreParser):
         return(string)
 
 @app.command()
-def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None):
+def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None, one_page_breaking: Optional[bool] = None):
     print(f"Working on {mscx_input}")
-    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO
+    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO, ONE_PAGE_BREAKING
     if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
     if custom_config is not None: CUSTOM_CONFIG = custom_config
     if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
     if left_page is not None: LEFT_PAGE = left_page
     if point_and_click is not None: POINT_AND_CLICK = point_and_click
     if comment_tempo is not None: COMMENT_TEMPO = comment_tempo
+    if one_page_breaking is not None: ONE_PAGE_BREAKING = one_page_breaking
     lg = LilypondGenerator(mscx_input)
     if ly_output is None:
         print("\n".join(lg.get_file()))
