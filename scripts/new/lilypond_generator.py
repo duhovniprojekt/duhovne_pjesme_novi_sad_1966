@@ -635,6 +635,11 @@ class LilypondGenerator(mp.MuseScoreParser):
                     if isinstance(e, mp.Lyrics):
                         if e.no == no:
                             #print(repr(e.text))
+                            if '"' in e.text:
+                                print(repr(e.text))
+                                e.text = e.text.replace('"', '\\"')
+                                e.text = f"\"{e.text}\""
+                                print(repr(e.text))
                             if "\xa0" in e.text:
                                 x = re.search(r"(\d.)\s(.*)", e.text)
                                 if x is not None and len(x.groups()) == 2:
