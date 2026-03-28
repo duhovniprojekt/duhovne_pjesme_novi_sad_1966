@@ -19,7 +19,7 @@ def extract_lyrics_with_lines(mscx_path: Path) -> dict[str, str]:
         syllabic = (lyric.findtext("syllabic") or "").strip()
 
         if syllabic in ("begin", "middle"):
-            verses[no] += text + "-"
+            verses[no] += text + " - "
         else:
             verses[no] += text + " "
 
@@ -42,9 +42,8 @@ def main() -> int:
         print(f"Failed to parse {mscx_path}: {e}")
         return 1
 
-    for no in sorted(verses.keys(), key=lambda x: int(x)):
-        line_no = int(no) + 1
-        print(f"[{line_no}] {verses[no]}")
+    ordered_verses = [verses[no] for no in sorted(verses.keys(), key=lambda x: int(x))]
+    print("\n\n".join(ordered_verses))
 
     return 0
 
