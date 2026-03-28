@@ -759,7 +759,7 @@
             <Lyrics>
               <no>2</no>
               <syllabic>begin</syllabic>
-              <text>svag</text>
+              <text>sva</text>
               </Lyrics>
             <Lyrics>
               <no>3</no>
@@ -811,7 +811,7 @@
               <no>2</no>
               <syllabic>end</syllabic>
               <ticks_f>0/4</ticks_f>
-              <text>da</text>
+              <text>gda</text>
               </Lyrics>
             <Lyrics>
               <no>3</no>
@@ -1215,12 +1215,12 @@
             <Lyrics>
               <no>2</no>
               <syllabic>begin</syllabic>
-              <text>duš</text>
+              <text>du</text>
               </Lyrics>
             <Lyrics>
               <no>3</no>
               <syllabic>begin</syllabic>
-              <text>grješ</text>
+              <text>grje</text>
               </Lyrics>
             <Spanner type="Slur">
               <Slur>
@@ -1265,13 +1265,13 @@
               <no>2</no>
               <syllabic>end</syllabic>
               <ticks_f>0/4</ticks_f>
-              <text>man</text>
+              <text>šman</text>
               </Lyrics>
             <Lyrics>
               <no>3</no>
               <syllabic>end</syllabic>
               <ticks_f>0/4</ticks_f>
-              <text>ni</text>
+              <text>šni</text>
               </Lyrics>
             <Note>
               <pitch>71</pitch>
@@ -1286,7 +1286,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <syllabic>begin</syllabic>
-              <text>zem</text>
+              <text>ze</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
@@ -1337,7 +1337,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <syllabic>end</syllabic>
-              <text>lja</text>
+              <text>mlja</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
@@ -1720,12 +1720,12 @@
             <Lyrics>
               <no>1</no>
               <syllabic>middle</syllabic>
-              <text>slav</text>
+              <text>sla</text>
               </Lyrics>
             <Lyrics>
               <no>2</no>
               <syllabic>begin</syllabic>
-              <text>vječ</text>
+              <text>vje</text>
               </Lyrics>
             <Lyrics>
               <no>3</no>
@@ -1769,13 +1769,13 @@
               <no>1</no>
               <syllabic>end</syllabic>
               <ticks_f>0/4</ticks_f>
-              <text>ni</text>
+              <text>vni</text>
               </Lyrics>
             <Lyrics>
               <no>2</no>
               <syllabic>end</syllabic>
               <ticks_f>0/4</ticks_f>
-              <text>ni</text>
+              <text>čni</text>
               </Lyrics>
             <Lyrics>
               <no>3</no>
@@ -1796,7 +1796,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <syllabic>begin</syllabic>
-              <text>vječ</text>
+              <text>vje</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
@@ -1845,7 +1845,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <syllabic>middle</syllabic>
-              <text>nos</text>
+              <text>čno</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
@@ -1882,7 +1882,7 @@
             <durationType>half</durationType>
             <Lyrics>
               <syllabic>end</syllabic>
-              <text>ti.</text>
+              <text>sti.</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
