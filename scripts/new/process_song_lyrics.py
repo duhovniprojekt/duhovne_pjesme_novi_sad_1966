@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 
-SYLLABIFY_DIR = Path("/home/bebox/Work/Croatian-syllabification")
+SYLLABIFY_DIR = (Path(__file__).resolve().parent / "../../../Croatian-syllabification").resolve()
 SYLLABIFY_SCRIPT = SYLLABIFY_DIR / "syllabify_cli.py"
 APOSTROPHES = {"'", "’"}
 
