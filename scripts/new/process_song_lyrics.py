@@ -33,7 +33,10 @@ def keep_only_lyrics(raw_text: str) -> str:
         stripped = line.strip()
         if stripped.startswith("title =") or stripped.startswith("composer ="):
             continue
-        lines.append(line.replace("'", ""))
+        cleaned = line
+        for apostrophe in APOSTROPHES:
+            cleaned = cleaned.replace(apostrophe, "")
+        lines.append(cleaned)
 
     while lines and not lines[0].strip():
         lines.pop(0)
@@ -61,6 +64,64 @@ def apply_hardcoded_exceptions(text: str) -> str:
 def restore_apostrophes_from_mscx(syllb_text: str, mscx_text: str) -> str:
     def strip_apostrophes(token: str) -> str:
         return "".join(ch for ch in token if ch not in APOSTROPHES)
+
+    def build_normalized(text: str) -> tuple[str, list[int]]:
+        normalized_chars = []
+        index_map = []
+        for index, ch in enumerate(text):
+            if ch in APOSTROPHES:
+                continue
+            if ch.isspace() or ch == "-":
+                continue
+            normalized_chars.append(ch)
+            index_map.append(index)
+        return "".join(normalized_chars), index_map
+
+    def find_apostrophes(text: str) -> list[tuple[int, str]]:
+        positions = []
+        normalized_index = 0
+        for ch in text:
+            if ch in APOSTROPHES:
+                positions.append((normalized_index, ch))
+                continue
+            if ch.isspace() or ch == "-":
+                continue
+            normalized_index += 1
+        return positions
+
+    def restore_apostrophes_by_alignment(syllb_line: str, mscx_line: str) -> str:
+        normalized_mscx, _ = build_normalized(mscx_line)
+        normalized_syllb, index_map = build_normalized(syllb_line)
+        if normalized_mscx != normalized_syllb:
+            return syllb_line
+
+        apostrophes = find_apostrophes(mscx_line)
+        if not apostrophes:
+            return syllb_line
+
+        insertions: dict[int, list[str]] = {}
+        for normalized_index, apostrophe in apostrophes:
+            if normalized_index == 0:
+                insert_pos = 0
+            else:
+                if normalized_index - 1 >= len(index_map):
+                    continue
+                insert_pos = index_map[normalized_index - 1] + 1
+            insertions.setdefault(insert_pos, []).append(apostrophe)
+
+        if not insertions:
+            return syllb_line
+
+        result = []
+        for idx, ch in enumerate(syllb_line):
+            if idx in insertions:
+                if ch not in APOSTROPHES:
+                    result.extend(insertions[idx])
+            result.append(ch)
+        end_insertions = insertions.get(len(syllb_line))
+        if end_insertions:
+            result.extend(end_insertions)
+        return "".join(result)
 
     def rebuild_token_from_template(source_token: str, template_token: str) -> str:
         source_no_apost = strip_apostrophes(source_token)
@@ -127,7 +188,9 @@ def restore_apostrophes_from_mscx(syllb_text: str, mscx_text: str) -> str:
                     m_token,
                 )
 
-        restored_lines.append("".join(syllb_parts))
+        restored_line = "".join(syllb_parts)
+        restored_line = restore_apostrophes_by_alignment(restored_line, mscx_line)
+        restored_lines.append(restored_line)
 
     if len(mscx_lines) < len(syllb_lines):
         restored_lines.extend(syllb_lines[len(mscx_lines):])
