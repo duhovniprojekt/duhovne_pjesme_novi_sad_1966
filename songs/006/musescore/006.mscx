@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="3.01">
-  <programVersion>3.5.0</programVersion>
-  <programRevision>43c5553</programRevision>
+<museScore version="3.02">
+  <programVersion>3.6.2</programVersion>
+  <programRevision>3224f34</programRevision>
   <Score>
     <LayerTag id="0" tag="default"></LayerTag>
     <currentLayer>0</currentLayer>
@@ -10,11 +10,7 @@
       <pageWidth>8.27007</pageWidth>
       <pageHeight>11.6901</pageHeight>
       <pagePrintableWidth>7.48267</pagePrintableWidth>
-      <pageEvenLeftMargin>0.393701</pageEvenLeftMargin>
-      <pageOddLeftMargin>0.393701</pageOddLeftMargin>
-      <pageEvenTopMargin>0.393701</pageEvenTopMargin>
       <pageEvenBottomMargin>0.787403</pageEvenBottomMargin>
-      <pageOddTopMargin>0.393701</pageOddTopMargin>
       <pageOddBottomMargin>0.787403</pageOddBottomMargin>
       <lyricsDashForce>0</lyricsDashForce>
       <doubleBarDistance>0.46</doubleBarDistance>
@@ -70,6 +66,8 @@
       <repeatRightFramePadding>0.5</repeatRightFramePadding>
       <repeatRightFrameWidth>0.2</repeatRightFrameWidth>
       <repeatRightFrameRound>25</repeatRightFrameRound>
+      <usePre_3_6_defaults>1</usePre_3_6_defaults>
+      <defaultsVersion>301</defaultsVersion>
       <Spatium>1.764</Spatium>
       </Style>
     <showInvisible>1</showInvisible>
@@ -83,6 +81,7 @@
     <metaTag name="lyricist"></metaTag>
     <metaTag name="movementNumber"></metaTag>
     <metaTag name="movementTitle"></metaTag>
+    <metaTag name="mscVersion">3.02</metaTag>
     <metaTag name="platform">Apple Macintosh</metaTag>
     <metaTag name="poet"></metaTag>
     <metaTag name="source"></metaTag>
@@ -97,7 +96,7 @@
         <bracket type="0" span="4" col="0"/>
         </Staff>
       <trackName>Soprano</trackName>
-      <Instrument>
+      <Instrument id="soprano">
         <longName>Soprano</longName>
         <shortName>S.</shortName>
         <trackName>Soprano</trackName>
@@ -149,7 +148,7 @@
           </StaffType>
         </Staff>
       <trackName>Alto</trackName>
-      <Instrument>
+      <Instrument id="alto">
         <longName>Alto</longName>
         <shortName>A.</shortName>
         <trackName>Alto</trackName>
@@ -202,7 +201,7 @@
         <defaultClef>F</defaultClef>
         </Staff>
       <trackName>Tenor</trackName>
-      <Instrument>
+      <Instrument id="tenor">
         <longName>Tenor</longName>
         <shortName>T.</shortName>
         <trackName>Tenor</trackName>
@@ -256,7 +255,7 @@
         <defaultClef>F</defaultClef>
         </Staff>
       <trackName>Bass</trackName>
-      <Instrument>
+      <Instrument id="bass">
         <longName>Bass</longName>
         <shortName>B.</shortName>
         <trackName>Bass</trackName>
@@ -309,7 +308,7 @@
           </StaffType>
         </Staff>
       <trackName>Chords</trackName>
-      <Instrument>
+      <Instrument id="voice">
         <longName>Chords</longName>
         <shortName>Co.</shortName>
         <trackName>Voice</trackName>
@@ -375,6 +374,7 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
+        <boxAutoSize>0</boxAutoSize>
         <Text>
           <style>Title</style>
           <text>6</text>
@@ -835,6 +835,7 @@
             <Lyrics>
               <no>1</no>
               <syllabic>end</syllabic>
+              <ticks_f>0/4</ticks_f>
               <text>stva</text>
               </Lyrics>
             <Lyrics>
@@ -875,14 +876,14 @@
               <text>vi</text>
               </Lyrics>
             <Lyrics>
-              <no>1</no>
-              <syllabic>middle</syllabic>
-              <text>be</text>
-              </Lyrics>
-            <Lyrics>
               <no>2</no>
               <syllabic>begin</syllabic>
               <text>lju</text>
+              </Lyrics>
+            <Lyrics>
+              <no>1</no>
+              <syllabic>begin</syllabic>
+              <text>be</text>
               </Lyrics>
             <Note>
               <pitch>69</pitch>
@@ -900,14 +901,15 @@
               <text>ca.</text>
               </Lyrics>
             <Lyrics>
-              <no>1</no>
-              <syllabic>middle</syllabic>
-              <text>skog.</text>
-              </Lyrics>
-            <Lyrics>
               <no>2</no>
               <syllabic>end</syllabic>
               <text>de.</text>
+              </Lyrics>
+            <Lyrics>
+              <no>1</no>
+              <syllabic>end</syllabic>
+              <ticks_f>0/4</ticks_f>
+              <text>skog.</text>
               </Lyrics>
             <Note>
               <pitch>69</pitch>
@@ -918,16 +920,16 @@
             <dots>1</dots>
             <durationType>eighth</durationType>
             <Lyrics>
-              <no>1</no>
-              <syllabic>begin</syllabic>
-              <text>Ha</text>
-              </Lyrics>
-            <Lyrics>
               <no>2</no>
               <syllabic>begin</syllabic>
               <text>Ha</text>
               </Lyrics>
             <Lyrics>
+              <syllabic>begin</syllabic>
+              <text>Ha</text>
+              </Lyrics>
+            <Lyrics>
+              <no>1</no>
               <syllabic>begin</syllabic>
               <text>Ha</text>
               </Lyrics>
@@ -939,16 +941,16 @@
           <Chord>
             <durationType>16th</durationType>
             <Lyrics>
-              <no>1</no>
-              <syllabic>middle</syllabic>
-              <text>le</text>
-              </Lyrics>
-            <Lyrics>
               <no>2</no>
               <syllabic>middle</syllabic>
               <text>le</text>
               </Lyrics>
             <Lyrics>
+              <syllabic>middle</syllabic>
+              <text>le</text>
+              </Lyrics>
+            <Lyrics>
+              <no>1</no>
               <syllabic>middle</syllabic>
               <text>le</text>
               </Lyrics>
@@ -1165,16 +1167,16 @@
             <Lyrics>
               <no>1</no>
               <syllabic>end</syllabic>
-              <text>ja</text>
+              <text>ja,</text>
               </Lyrics>
             <Lyrics>
               <no>2</no>
               <syllabic>end</syllabic>
-              <text>ja</text>
+              <text>ja,</text>
               </Lyrics>
             <Lyrics>
               <syllabic>end</syllabic>
-              <text>ja</text>
+              <text>ja,</text>
               </Lyrics>
             <Note>
               <pitch>74</pitch>
