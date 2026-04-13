@@ -1133,7 +1133,7 @@
             <Lyrics>
               <no>2</no>
               <syllabic>begin</syllabic>
-              <text>stres</text>
+              <text>stre</text>
               </Lyrics>
             <Note>
               <pitch>74</pitch>
@@ -1150,7 +1150,7 @@
               <no>2</no>
               <syllabic>end</syllabic>
               <ticks_f>0/8</ticks_f>
-              <text>lo</text>
+              <text>slo</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
@@ -1243,7 +1243,7 @@
             <Lyrics>
               <no>2</no>
               <syllabic>begin</syllabic>
-              <text>od</text>
+              <text>o</text>
               </Lyrics>
             <Note>
               <pitch>66</pitch>
@@ -1262,7 +1262,7 @@
             <Lyrics>
               <no>2</no>
               <syllabic>end</syllabic>
-              <text>mah</text>
+              <text>dmah</text>
               </Lyrics>
             <Note>
               <pitch>69</pitch>
@@ -1295,7 +1295,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <syllabic>begin</syllabic>
-              <text>duš</text>
+              <text>du</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
@@ -1316,7 +1316,7 @@
             <durationType>eighth</durationType>
             <Lyrics>
               <syllabic>end</syllabic>
-              <text>man</text>
+              <text>šman</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
