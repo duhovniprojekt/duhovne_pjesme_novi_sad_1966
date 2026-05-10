@@ -1282,10 +1282,10 @@
               </Lyrics>
             <Lyrics>
               <no>1</no>
-              <text>šta</text>
+              <text>što</text>
               </Lyrics>
             <Lyrics>
-              <text>šta</text>
+              <text>što</text>
               </Lyrics>
             <Note>
               <pitch>62</pitch>
@@ -1297,7 +1297,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <no>2</no>
-              <text>šta</text>
+              <text>što</text>
               </Lyrics>
             <Lyrics>
               <no>1</no>
@@ -1444,7 +1444,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <no>1</no>
-              <text>šta</text>
+              <text>što</text>
               </Lyrics>
             <Note>
               <pitch>74</pitch>
@@ -1641,6 +1641,7 @@
             <Lyrics>
               <no>1</no>
               <syllabic>end</syllabic>
+              <ticks_f>0/4</ticks_f>
               <text>o</text>
               </Lyrics>
             <Note>
@@ -2041,7 +2042,7 @@
             <durationType>quarter</durationType>
             <Lyrics>
               <no>1</no>
-              <text>šta</text>
+              <text>što</text>
               </Lyrics>
             <Note>
               <pitch>62</pitch>
