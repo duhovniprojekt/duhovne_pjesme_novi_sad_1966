@@ -17,6 +17,7 @@ LEFT_PAGE = True
 POINT_AND_CLICK = False
 COMMENT_TEMPO = True
 ONE_PAGE_BREAKING = False
+TITLEX_SUFFIX = None
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
@@ -332,7 +333,10 @@ class LilypondGenerator(mp.MuseScoreParser):
                 if e.style == "Title":
                     string.append(f"  title = \"%s\"" % e.text.upper())
                 if e.style == "Subtitle":
-                    string.append(f"  titlex = \"%s\"" % e.text)
+                    titlex = e.text
+                    if TITLEX_SUFFIX:
+                        titlex = f"{titlex} ({TITLEX_SUFFIX})"
+                    string.append(f"  titlex = \"%s\"" % titlex)
                 elif e.style == "Composer":
                     string.append("  composer = \"%s\"" % e.text)
                 elif e.style == "Lyricist":
@@ -696,9 +700,16 @@ class LilypondGenerator(mp.MuseScoreParser):
                         if lyric_handler.note_pitch:
                             lyric_handler.tuplet_after = True
                     elif isinstance(e, mp.EndTuplet):
-                        lyric_handler.tuplet_end = "}"
                         if lyric_handler.note_pitch:
+                            lyric_handler.tuplet_end = "}"
                             lyric_handler.tuplet_end_after = True
+                        elif len(bar):
+                            # endTuplet can arrive after the last lyric-bearing note
+                            # was already flushed into the bar, so attach it there.
+                            bar[-1].tuplet_end = "}"
+                            bar[-1].tuplet_end_after = True
+                        else:
+                            lyric_handler.tuplet_end = "}"
 
                     if lyric_handler.note_duration is not None and lyric_handler.text is not None:
                         bar.append(lyric_handler)
@@ -870,9 +881,9 @@ class LilypondGenerator(mp.MuseScoreParser):
         return(string)
 
 @app.command()
-def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None, one_page_breaking: Optional[bool] = None):
+def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None, one_page_breaking: Optional[bool] = None, titlex_suffix: Optional[str] = None):
     print(f"Working on {mscx_input}")
-    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO, ONE_PAGE_BREAKING
+    global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO, ONE_PAGE_BREAKING, TITLEX_SUFFIX
     if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
     if custom_config is not None: CUSTOM_CONFIG = custom_config
     if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
@@ -880,6 +891,7 @@ def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Opt
     if point_and_click is not None: POINT_AND_CLICK = point_and_click
     if comment_tempo is not None: COMMENT_TEMPO = comment_tempo
     if one_page_breaking is not None: ONE_PAGE_BREAKING = one_page_breaking
+    TITLEX_SUFFIX = titlex_suffix
     lg = LilypondGenerator(mscx_input)
     if ly_output is None:
         print("\n".join(lg.get_file()))
