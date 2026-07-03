@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
 import musescore_parser as mp
-import sys
 from fractions import Fraction
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 import re
 import typer
 
-#https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
+# https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
 
 LILYPOND_VERSION = "2.24.1"
 CUSTOM_CONFIG = False
@@ -21,11 +20,13 @@ TITLEX_SUFFIX = None
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
+
 @dataclass
 class Base:
     def __post_init__(self):
-        #print("%%", self)
+        # print("%%", self)
         pass
+
 
 @dataclass
 class LyricHandler(Base):
@@ -40,92 +41,75 @@ class LyricHandler(Base):
     tuplet_end: Optional[str] = None
     tuplet_end_after: bool = False
 
+
 parser_key_signature = {
-    '-7' : 'ces',
-    '-6' : 'ges',
-    '-5' : 'des',
-    '-4' : 'as',
-    '-3' : 'es',
-    '-2' : 'b',
-    '-1' : 'f',
-    '0' : 'c',
-    '1' : 'g',
-    '2' : 'd',
-    '3' : 'a',
-    '4' : 'e',
-    '5' : 'h',
-    '6' : 'fis',
-    '7' : 'cis',
+    "-7": "ces",
+    "-6": "ges",
+    "-5": "des",
+    "-4": "as",
+    "-3": "es",
+    "-2": "b",
+    "-1": "f",
+    "0": "c",
+    "1": "g",
+    "2": "d",
+    "3": "a",
+    "4": "e",
+    "5": "h",
+    "6": "fis",
+    "7": "cis",
 }
 
 parser_key_signature_duration = {
-    '4/4': "1",
-    '3/4': "2.",
-    '2/4': "2",
+    "4/4": "1",
+    "3/4": "2.",
+    "2/4": "2",
 }
 
-parser_duration_fractions = {
-    'whole' : "4/4",
-    'half' : "2/4",
-    'quarter' : "1/4",
-    'eighth' : "1/8",
-    '16th' : "1/16",
-    '32nd' : "1/32",
-    '64th' : "1/64"
-}
+parser_duration_fractions = {"whole": "4/4", "half": "2/4", "quarter": "1/4", "eighth": "1/8", "16th": "1/16", "32nd": "1/32", "64th": "1/64"}
 
 parser_tpc = {
-    '' : 's',    
-    '-1' : 'feses',
-    '0' : 'ceses',
-    '1' : 'geses',
-    '2' : 'deses',
-    '3' : 'ases',
-    '4' : 'eses',
-    '5' : 'bes',
-    '6' : 'fes',
-    '7' : 'ces',
-    '8' : 'ges',
-    '9' : 'des',
-    '10' : 'as',
-    '11' : 'es',
-    '12' : 'b',
-    '13' : 'f',
-    '14' : 'c',
-    '15' : 'g',
-    '16' : 'd',
-    '17' : 'a',
-    '18' : 'e',
-    '19' : 'h',
-    '20' : 'fis',
-    '21' : 'cis',
-    '22' : 'gis',
-    '23' : 'dis',
-    '24' : 'ais',
-    '25' : 'eis',
-    '26' : 'his',
-    '27' : 'fisis',
-    '28' : 'cisis',
-    '29' : 'gisis',
-    '30' : 'disis',
-    '31' : 'aisis',
-    '32' : 'eisis',
-    '33' : 'hisis'
+    "": "s",
+    "-1": "feses",
+    "0": "ceses",
+    "1": "geses",
+    "2": "deses",
+    "3": "ases",
+    "4": "eses",
+    "5": "bes",
+    "6": "fes",
+    "7": "ces",
+    "8": "ges",
+    "9": "des",
+    "10": "as",
+    "11": "es",
+    "12": "b",
+    "13": "f",
+    "14": "c",
+    "15": "g",
+    "16": "d",
+    "17": "a",
+    "18": "e",
+    "19": "h",
+    "20": "fis",
+    "21": "cis",
+    "22": "gis",
+    "23": "dis",
+    "24": "ais",
+    "25": "eis",
+    "26": "his",
+    "27": "fisis",
+    "28": "cisis",
+    "29": "gisis",
+    "30": "disis",
+    "31": "aisis",
+    "32": "eisis",
+    "33": "hisis",
 }
 
-parser_barline = {
-    "startRepeat" : ".|:",
-    "endRepeat" : ":|.",
-    "double" : "||",
-    "end" : "|."
-}
+parser_barline = {"startRepeat": ".|:", "endRepeat": ":|.", "double": "||", "end": "|."}
 
-parser_clefs = {
-    "G8vb" : "tenorG",
-    "F" : "bass",
-    '' : "treble",
-    'G' : "treble"
-}
+parser_clefs = {"G8vb": "tenorG", "F": "bass", "": "treble", "G": "treble"}
 
 parser_name = {
     "": "Zero",
@@ -151,22 +135,19 @@ stanza_number = {
 
 parser_dots_fractions = {
     "": 1,
-    "1": 1 + 1/2,
-    "2": 1 + 1/2 + 1/2/2,
-    "3": 1 + 1/2 + 1/2/2 + 1/2/2/2,
-    "4": 1 + 1/2 + 1/2/2 + 1/2/2/2 + 1/2/2/2/2,
+    "1": 1 + 1 / 2,
+    "2": 1 + 1 / 2 + 1 / 2 / 2,
+    "3": 1 + 1 / 2 + 1 / 2 / 2 + 1 / 2 / 2 / 2,
+    "4": 1 + 1 / 2 + 1 / 2 / 2 + 1 / 2 / 2 / 2 + 1 / 2 / 2 / 2 / 2,
 }
 
 parser_fraction_to_duration = {
     "1": "1",
     "1/1": "1",
-
     "1/2": "2",
-
     "1/4": "4",
     "2/4": "2",
     "3/4": "2.",
-
     "-1/8": "8",
     "1/8": "8",
     "2/8": "4",
@@ -175,26 +156,21 @@ parser_fraction_to_duration = {
     "5/8": "8*5",
     "6/8": "2.",
     "7/8": "2..",
-
     "1/16": "16",
     "3/16": "8.",
     "7/16": "4..",
     "15/16": "2...",
-
     "1/32": "32",
     "3/32": "16.",
     "7/32": "8..",
     "15/32": "4...",
-
     "1/64": "64",
     "3/64": "32.",
 }
 
-parse_measure_end_repeat = {
-    "2": ":|."
-}
+parse_measure_end_repeat = {"2": ":|."}
 
-#https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
+# https://github.com/OpenLilyPondFonts/lilyjazz/blob/master/JazzSampler.pdf
 parse_chord_names = {
     "m7": "m7",
     "(add9)": "9^7",
@@ -233,83 +209,83 @@ parse_chord_names = {
     "7+": "7.5+",
     "aug7": "7.5+",
     "o7": "dim7",
-    "07": "m7.5-"
+    "07": "m7.5-",
 }
 
 last_pitch = 60
 last_tpc = 14
 
+
 def get_pitch(pitch, tpc):
-        global last_pitch, last_tpc
-        line = parser_tpc[tpc]
-        pitch_diff = int(pitch) - int(last_pitch)
-        tcp_diff = int(tpc) - int(last_tpc)
-        last_pitch = pitch
-        last_tpc = tpc
-        #print("%%%% pitch_diff %s, last_pitch %s, pitch %s, tcp_diff %s" % (pitch_diff, last_pitch, pitch, tcp_diff))
+    global last_pitch, last_tpc
+    line = parser_tpc[tpc]
+    pitch_diff = int(pitch) - int(last_pitch)
+    tcp_diff = int(tpc) - int(last_tpc)
+    last_pitch = pitch
+    last_tpc = tpc
+    # print("%%%% pitch_diff %s, last_pitch %s, pitch %s, tcp_diff %s" % (pitch_diff, last_pitch, pitch, tcp_diff))
 
-        #TODO: clean up this mess
-        if (pitch_diff >= 6 and pitch_diff < 18):
-            if (pitch_diff == 6 and tcp_diff == 6):
-                #print("%% pitch_diff > but exception")
-                line += ""
-            else:
-                #print("%% pitch_diff >")
-                line += "'"
-        elif (pitch_diff >= 18 and pitch_diff < 30):
-            if (pitch_diff == 18 and tcp_diff == 6):
-                #print("%% pitch_diff >> but exception")
-                line += "'"
-            else:
-                #print("%% pitch_diff >>")
-                line += "''"
-        elif (pitch_diff >= 30):
-            if (pitch_diff == 30 and tcp_diff == 6):
-                #print("%% pitch_diff >>> but exception")
-                line += "''"
-            else:
-                #print("%% pitch_diff >>>")
-                line += "'''"
-        elif (pitch_diff <= -6 and pitch_diff > -18):
-            if (pitch_diff == -6 and tcp_diff == -6):
-                #print("%% pitch_diff < but exception")
-                line += ""
-            else:
-                #print("%% pitch_diff <")
-                line += ","
-        elif (pitch_diff <= -18 and pitch_diff > -30):
+    # TODO: clean up this mess
+    if pitch_diff >= 6 and pitch_diff < 18:
+        if pitch_diff == 6 and tcp_diff == 6:
+            # print("%% pitch_diff > but exception")
+            line += ""
+        else:
+            # print("%% pitch_diff >")
+            line += "'"
+    elif pitch_diff >= 18 and pitch_diff < 30:
+        if pitch_diff == 18 and tcp_diff == 6:
+            # print("%% pitch_diff >> but exception")
+            line += "'"
+        else:
+            # print("%% pitch_diff >>")
+            line += "''"
+    elif pitch_diff >= 30:
+        if pitch_diff == 30 and tcp_diff == 6:
+            # print("%% pitch_diff >>> but exception")
+            line += "''"
+        else:
+            # print("%% pitch_diff >>>")
+            line += "'''"
+    elif pitch_diff <= -6 and pitch_diff > -18:
+        if pitch_diff == -6 and tcp_diff == -6:
+            # print("%% pitch_diff < but exception")
+            line += ""
+        else:
+            # print("%% pitch_diff <")
+            line += ","
+    elif pitch_diff <= -18 and pitch_diff > -30:
+        if pitch_diff == -18 and tcp_diff == -6:
+            # print("%% pitch_diff << but exception")
+            line += ","
+        else:
+            # print("%% pitch_diff <<")
+            line += ",,"
+    elif pitch_diff <= -30:
+        if pitch_diff == -30 and tcp_diff == -6:
+            # print("%% pitch_diff <<< but exception")
+            line += ",,"
+        else:
+            # print("%% pitch_diff <<<")
+            line += ",,,"
+    return line
 
-            if (pitch_diff == -18 and tcp_diff == -6):
-                #print("%% pitch_diff << but exception")
-                line += ","
-            else:
-                #print("%% pitch_diff <<")
-                line += ",,"
-        elif (pitch_diff <= -30):
-            if (pitch_diff == -30 and tcp_diff == -6):
-                #print("%% pitch_diff <<< but exception")
-                line += ",,"
-            else:
-                #print("%% pitch_diff <<<")
-                line += ",,,"
-        return line
-    
 
 class LilypondGenerator(mp.MuseScoreParser):
     def get_head(self):
         string = []
-        string.append("\\version \"%s\"" % LILYPOND_VERSION)
-        string.append("\\include \"deutsch.ly\"")
+        string.append('\\version "%s"' % LILYPOND_VERSION)
+        string.append('\\include "deutsch.ly"')
         string.append("jazzChords = { \\semiGermanChords }")
         if LEFT_PAGE:
             string.append("aFourL = {}")
         else:
             string.append("aFourR = {}")
         if CUSTOM_CONFIG:
-            string.append("\\include \"include.ily\"")
+            string.append('\\include "include.ily"')
             string.append("%markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
         else:
-            string.append("%\\include \"include.ily\"")
+            string.append('%\\include "include.ily"')
             string.append("markMoj = #(define-music-function (letter) (string?) #{ \\mark \\markup { \\box \\bold #letter } #})")
         if POINT_AND_CLICK:
             string.append("\\pointAndClickOff")
@@ -325,36 +301,36 @@ class LilypondGenerator(mp.MuseScoreParser):
     def get_header(self):
         string = []
         string.append("\\header {")
-        #string.append("  titlex = \"Pjevajte Jahvi\"")
+        # string.append("  titlex = \"Pjevajte Jahvi\"")
         poet_found = False
         part_found = False
         for e in self.staffs[0].children:
             if isinstance(e, mp.VBox):
                 if e.style == "Title":
-                    string.append(f"  title = \"%s\"" % e.text.upper())
+                    string.append('  title = "%s"' % e.text.upper())
                 if e.style == "Subtitle":
                     titlex = e.text
                     if TITLEX_SUFFIX:
                         titlex = f"{titlex} ({TITLEX_SUFFIX})"
-                    string.append(f"  titlex = \"%s\"" % titlex)
+                    string.append('  titlex = "%s"' % titlex)
                 elif e.style == "Composer":
-                    string.append("  composer = \"%s\"" % e.text)
+                    string.append('  composer = "%s"' % e.text)
                 elif e.style == "Lyricist":
-                    string.append("  %%poet = \"%s\"" % e.text)
-                    string.append("  style = \"%s\"" % e.text)
+                    string.append('  %%poet = "%s"' % e.text)
+                    string.append('  style = "%s"' % e.text)
                     poet_found = True
                 elif e.style == "Instrument Name (Part)":
-                    string.append("  %%meter = \"%s\"" % e.text)
-                    string.append("  broj = \"%s\"" % e.text)
+                    string.append('  %%meter = "%s"' % e.text)
+                    string.append('  broj = "%s"' % e.text)
                     part_found = True
         if not poet_found:
-            string.append("  style = \"\"")
+            string.append('  style = ""')
         if not part_found:
-            string.append("  broj = \"%s\"" % ORDINAL_NUMBER)
+            string.append('  broj = "%s"' % ORDINAL_NUMBER)
         string.append("  %tagline = \\markup { \\override #'(font-name . \"JohnSans White Pro\") \\override #'(font-size . -3) { Izvorno: Name, Album } }")
 
         string.append("}")
-        return string        
+        return string
 
     def get_paper(self):
         string = []
@@ -382,7 +358,180 @@ class LilypondGenerator(mp.MuseScoreParser):
     def get_staff_end(self):
         string = []
         string.append("}")
-        return string              
+        return string
+
+    def get_voice_numbers(self, staff):
+        voices = []
+        for sc in staff.children:
+            if isinstance(sc, mp.Measure):
+                for e in sc.children:
+                    voice = getattr(e, "voice", None)
+                    if voice is not None:
+                        if voice not in voices:
+                            voices.append(voice)
+        return sorted(voices)
+
+    def staff_has_multiple_voices(self, staff):
+        return len(self.get_voice_numbers(staff)) > 1
+
+    def get_voice_command(self, voice_number):
+        voice_commands = {
+            1: "\\voiceOne",
+            2: "\\voiceTwo",
+            3: "\\voiceThree",
+            4: "\\voiceFour",
+        }
+        return voice_commands.get(voice_number, "\\oneVoice")
+
+    def is_small_voice(self, staff, voice_number):
+        small_found = False
+        normal_found = False
+        for sc in staff.children:
+            if isinstance(sc, mp.Measure):
+                for e in sc.children:
+                    if isinstance(e, mp.Chord):
+                        if e.voice == voice_number:
+                            if e.small:
+                                small_found = True
+                            else:
+                                normal_found = True
+        return small_found and not normal_found
+
+    def get_chord_pitch(self, chord):
+        notes = chord.notes
+        if not notes:
+            notes = [mp.Note(chord.note_pitch, chord.note_tpc)]
+        if len(notes) == 1:
+            line = get_pitch(notes[0].pitch, notes[0].tpc)
+        else:
+            chord_notes = []
+            for note in notes:
+                chord_notes.append(get_pitch(note.pitch, note.tpc))
+            line = "<%s>" % " ".join(chord_notes)
+        return line
+
+    def append_staff_data_element(self, e, bar, string):
+        has_break = False
+        if isinstance(e, mp.TimeSig):
+            string.append("  \\time %s/%s" % (e.sig_n, e.sig_d))
+        elif isinstance(e, mp.Tempo):
+            if not COMMENT_TEMPO:
+                string.append("  \\tempo 4 = %s" % int((60 * float(e.tempo))))
+            else:
+                string.append("  %%\\tempo 4 = %s" % int((60 * float(e.tempo))))
+        elif isinstance(e, mp.Rest):
+            if e.duration_type == "measure":
+                bar.append("r")
+                predicted_duration = Fraction(e.duration)
+                bar.append(predicted_duration)
+            else:
+                bar.append("r")
+                predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+                predicted_duration *= Fraction(parser_dots_fractions[e.dots])
+                bar.append(predicted_duration)
+        elif isinstance(e, mp.Chord):
+            bar.append(self.get_chord_pitch(e))
+            predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
+            predicted_duration *= Fraction(parser_dots_fractions[e.dots])
+            bar.append(predicted_duration)
+        elif isinstance(e, mp.KeySig):
+            tpc_value = str(14 + int(e.accidental))
+            string.append("  \\key %s \\major" % parser_tpc[tpc_value])
+        elif isinstance(e, mp.ChordNoteSpanner):
+            if e.type == "Tie":
+                if e.next_location_fractions or e.next_location_measures:
+                    bar.append("~")
+        elif isinstance(e, mp.ChordSpanner):
+            if e.type == "Slur":
+                if e.next_location_fractions or e.next_location_measures:
+                    bar.append("(")
+                elif e.prev_location_fractions or e.prev_location_measures:
+                    bar.append(")")
+        elif isinstance(e, mp.BarLine):
+            bar.append('\\bar "%s"' % parser_barline[e.subtype])
+        elif isinstance(e, mp.RehearsalMark):
+            if "?" in e.text:
+                mark_variable_name = e.text.split("?")[1]
+                text = "\\%s" % mark_variable_name
+            else:
+                text = "\\markMoj"
+            bar.append(text)
+        elif isinstance(e, mp.Clef):
+            if e.concert_clef_type:
+                text = "\\clef %s" % parser_clefs[e.concert_clef_type]
+                bar.append(text)
+            elif e.transposing_clef_type:
+                text = "\\clef %s" % parser_clefs[e.transposing_clef_type]
+                bar.append(text)
+        elif isinstance(e, mp.LayoutBreak):
+            if e.subtype == "line":
+                has_break = True
+        elif isinstance(e, mp.VoltaSpanner):
+            if e.next_location_measures:
+                text = '\\set Score.repeatCommands = #\'((volta "%s"))' % e.begin_text
+                bar.append(text)
+            elif e.prev_location_measures:
+                text = "\\set Score.repeatCommands = #'((volta #f))"
+                bar.append(text)
+        elif isinstance(e, mp.Tuplet):
+            text = "\\tuplet %s/%s {" % (e.actual_notes, e.normal_notes)
+            bar.append(text)
+        elif isinstance(e, mp.EndTuplet):
+            text = "}"
+            bar.append(text)
+        elif isinstance(e, mp.StartRepeat):
+            bar.append('\\bar "%s"' % parser_barline["startRepeat"])
+        elif isinstance(e, mp.StaffText):
+            bar.append("%%  %s" % e.text)
+        return has_break
+
+    def get_polyphonic_staff_data(self, staff):
+        string = []
+        voices = self.get_voice_numbers(staff)
+        string.append("staff%s = <<" % parser_name[staff.id])
+        global last_pitch, last_tpc
+        for voice_number in voices:
+            last_pitch = 60
+            last_tpc = 14
+            is_small = self.is_small_voice(staff, voice_number)
+            string.append("  \\new Voice \\relative c' {")
+            string.append("    %s" % self.get_voice_command(voice_number))
+            if is_small:
+                string.append("    \\magnifyMusic 0.63 {")
+                string.append("      \\override Score.SpacingSpanner.spacing-increment = #(* 1.2 0.63)")
+            for sc in staff.children:
+                if isinstance(sc, mp.Measure):
+                    bar = []
+                    line = "      " if is_small else "    "
+                    has_break = False
+                    for e in sc.children:
+                        event_voice = getattr(e, "voice", None)
+                        if event_voice is None:
+                            if voice_number == 1:
+                                if self.append_staff_data_element(e, bar, string):
+                                    has_break = True
+                        elif event_voice == voice_number:
+                            if self.append_staff_data_element(e, bar, string):
+                                has_break = True
+                    if sc.len and voice_number == 1:
+                        line += "\\partial %s" % parser_fraction_to_duration[sc.len]
+                        if is_small:
+                            line += "\n      "
+                        else:
+                            line += "\n    "
+                    line += self.fractions_convert_bar_with_fractions_to_ly(bar)
+                    if sc.end_repeat and voice_number == 1:
+                        line += '\\bar "%s"' % parse_measure_end_repeat[sc.end_repeat]
+                        line += " "
+                    line += "|"
+                    if has_break and voice_number == 1:
+                        line += " \\break"
+                    string.append(line)
+            if is_small:
+                string.append("    }")
+            string.append("  }")
+        string.append(">>")
+        return string
 
     def fractions_add_missing(self, bar, time_signature):
         fraction_sum = Fraction(0)
@@ -456,11 +605,12 @@ class LilypondGenerator(mp.MuseScoreParser):
                 harmony = e
             else:
                 line += e
-            
+
         return line
 
     def get_staff_data(self, staff):
         string = []
+        small_music_open = False
         for sc in staff.children:
             if isinstance(sc, mp.Measure):
                 bar = []
@@ -475,6 +625,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                         else:
                             string.append("  %%\\tempo 4 = %s" % int((60 * float(e.tempo))))
                     elif isinstance(e, mp.Rest):
+                        if small_music_open:
+                            bar.append("}")
+                            small_music_open = False
                         if e.duration_type == "measure":
                             bar.append("r")
                             predicted_duration = Fraction(e.duration)
@@ -484,8 +637,16 @@ class LilypondGenerator(mp.MuseScoreParser):
                             predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                             predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                             bar.append(predicted_duration)
-                    elif isinstance(e, mp.Chord):
-                        bar.append(get_pitch(e.note_pitch, e.note_tpc))
+                    elif isinstance(e, mp.Chord) and e.voice == 1:
+                        if e.small:
+                            if not small_music_open:
+                                bar.append("\\magnifyMusic 0.63 { \\override Score.SpacingSpanner.spacing-increment = #(* 1.2 0.63)")
+                                small_music_open = True
+                        else:
+                            if small_music_open:
+                                bar.append("}")
+                                small_music_open = False
+                        bar.append(self.get_chord_pitch(e))
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                         predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                         bar.append(predicted_duration)
@@ -503,9 +664,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                             elif e.prev_location_fractions or e.prev_location_measures:
                                 bar.append(")")
                     elif isinstance(e, mp.BarLine):
-                        bar.append("\\bar \"%s\"" % parser_barline[e.subtype])
+                        bar.append('\\bar "%s"' % parser_barline[e.subtype])
                     elif isinstance(e, mp.RehearsalMark):
-                        #text = "\\markMoj \"%s\"" % e.text
+                        # text = "\\markMoj \"%s\"" % e.text
                         if "?" in e.text:
                             mark_variable_name = e.text.split("?")[1]
                             text = "\\%s" % mark_variable_name
@@ -524,10 +685,10 @@ class LilypondGenerator(mp.MuseScoreParser):
                             has_break = True
                     elif isinstance(e, mp.VoltaSpanner):
                         if e.next_location_measures:
-                            text = "\\set Score.repeatCommands = #\'((volta \"%s\"))" % e.begin_text
+                            text = '\\set Score.repeatCommands = #\'((volta "%s"))' % e.begin_text
                             bar.append(text)
                         elif e.prev_location_measures:
-                            text = "\\set Score.repeatCommands = #\'((volta #f))"
+                            text = "\\set Score.repeatCommands = #'((volta #f))"
                             bar.append(text)
                     elif isinstance(e, mp.Tuplet):
                         text = "\\tuplet %s/%s {" % (e.actual_notes, e.normal_notes)
@@ -536,35 +697,36 @@ class LilypondGenerator(mp.MuseScoreParser):
                         text = "}"
                         bar.append(text)
                     elif isinstance(e, mp.StartRepeat):
-                        bar.append("\\bar \"%s\"" % parser_barline["startRepeat"])
+                        bar.append('\\bar "%s"' % parser_barline["startRepeat"])
                     elif isinstance(e, mp.StaffText):
                         bar.append("%%  %s" % e.text)
 
-                #line += str(bar) + "\n  "
+                # line += str(bar) + "\n  "
                 if sc.len:
                     line += "\\partial %s" % parser_fraction_to_duration[sc.len]
                     line += "\n  "
                 line += self.fractions_convert_bar_with_fractions_to_ly(bar)
                 if sc.end_repeat:
-                    line += "\\bar \"%s\"" % parse_measure_end_repeat[sc.end_repeat]
+                    line += '\\bar "%s"' % parse_measure_end_repeat[sc.end_repeat]
                     line += " "
                 line += "|"
                 if has_break:
                     line += " \\break"
                 string.append(line)
+        if small_music_open:
+            string.append("  }")
         return string
-
 
     def get_harmony(self, staff):
         string = []
 
-        #harmony_found = False
-        #for sc in staff.children:
+        # harmony_found = False
+        # for sc in staff.children:
         #    if isinstance(sc, mp.Measure):
         #        for e in sc.children:
         #            if isinstance(e, mp.Harmony):
         #                harmony_found = True
-        #if not harmony_found:
+        # if not harmony_found:
         #    return string
 
         string.append("harmony%s = \\chordmode  {" % parser_name[staff.id])
@@ -574,7 +736,6 @@ class LilypondGenerator(mp.MuseScoreParser):
                 bar = []
                 line = "  "
                 for e in sc.children:
-
                     if isinstance(e, mp.TimeSig):
                         time_signature = Fraction(f"{e.sig_n}/{e.sig_d}")
                     elif isinstance(e, mp.Harmony):
@@ -583,7 +744,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                         predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                         predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                         bar.append(predicted_duration)
-                    elif isinstance(e, mp.Rest):
+                    elif isinstance(e, mp.Rest) and e.voice == 1:
                         if e.duration_type == "measure":
                             predicted_duration = Fraction(e.duration)
                             bar.append(predicted_duration)
@@ -591,7 +752,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                             predicted_duration = Fraction(parser_duration_fractions[e.duration_type])
                             predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                             bar.append(predicted_duration)
-                    elif isinstance(e, mp.Location):
+                    elif isinstance(e, mp.Location) and e.voice == 1:
                         predicted_duration = Fraction(e.fractions)
                         bar.append(predicted_duration)
                 if sc.len:
@@ -601,13 +762,13 @@ class LilypondGenerator(mp.MuseScoreParser):
                 bar = self.fractions_sum_neighbor(bar)
                 bar = self.fractions_add_skip_if_bar_starts_with_fraction(bar)
                 line += self.fractions_convert_harmony_bar_with_fractions_to_ly(bar)
-                #line += str(bar)
+                # line += str(bar)
                 line += "|"
                 string.append(line)
         # force end bar
-        string.append("  \\bar \"|.\"")
+        string.append('  \\bar "|."')
         string.append("}")
-        return(string)
+        return string
 
     def get_lyric_nos(self, staff):
         nos = []
@@ -618,6 +779,19 @@ class LilypondGenerator(mp.MuseScoreParser):
                         if e.no not in nos:
                             nos.append(e.no)
         return sorted(nos)
+
+    def get_lyric_voice(self, staff, no):
+        voice = 1
+        found = False
+        for sc in staff.children:
+            if isinstance(sc, mp.Measure):
+                for e in sc.children:
+                    if isinstance(e, mp.Lyrics):
+                        if e.no == no:
+                            if not found:
+                                voice = e.voice
+                                found = True
+        return voice
 
     def fractions_swap_with_elements(self, bar):
         swaped_bar = []
@@ -641,37 +815,38 @@ class LilypondGenerator(mp.MuseScoreParser):
 
     def get_lyric(self, staff, no):
         bars = []
+        lyric_voice = self.get_lyric_voice(staff, no)
         for sc in staff.children:
             if isinstance(sc, mp.Measure):
                 bar = []
                 lyric_handler = LyricHandler()
                 for e in sc.children:
-                    if isinstance(e, mp.Lyrics):
+                    if isinstance(e, mp.Lyrics) and e.voice == lyric_voice:
                         if e.no == no:
-                            #print(repr(e.text))
+                            # print(repr(e.text))
                             if '"' in e.text:
                                 e.text = e.text.replace('"', '\\"')
-                                e.text = f"\"{e.text}\""
+                                e.text = f'"{e.text}"'
                             if "\xa0" in e.text:
                                 x = re.search(r"(\d.)\s(.*)", e.text)
                                 if x is not None and len(x.groups()) == 2:
                                     if " " in x.groups()[1]:
-                                        stanza_text = r'\set stanza = '
-                                        lyric_handler.text = "%s\"%s\" \"%s\"" % (stanza_text, x.groups()[0], x.groups()[1])
+                                        stanza_text = r"\set stanza = "
+                                        lyric_handler.text = '%s"%s" "%s"' % (stanza_text, x.groups()[0], x.groups()[1])
                                     else:
-                                        stanza_text = r'\set stanza = '
-                                        lyric_handler.text = "%s\"%s\" %s" % (stanza_text, x.groups()[0], x.groups()[1])
+                                        stanza_text = r"\set stanza = "
+                                        lyric_handler.text = '%s"%s" %s' % (stanza_text, x.groups()[0], x.groups()[1])
                                 else:
-                                    lyric_handler.text = "\"%s\"" % e.text
+                                    lyric_handler.text = '"%s"' % e.text
                             else:
                                 lyric_handler.text = e.text
                             if e.syllabic in ["begin", "middle"]:
                                 lyric_handler.extender_line = "--"
                             if e.ticks_f and e.ticks:
-                                predicted_duration = - Fraction(e.ticks_f)
+                                predicted_duration = -Fraction(e.ticks_f)
                                 lyric_handler.extender_line = "__"
                                 lyric_handler.extender_duration = abs(predicted_duration)
-                    elif isinstance(e, mp.Chord):
+                    elif isinstance(e, mp.Chord) and e.voice == lyric_voice:
                         if lyric_handler.note_duration is not None:
                             bar.append(lyric_handler)
                             lyric_handler = LyricHandler()
@@ -679,7 +854,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                         predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                         lyric_handler.note_pitch = "c"
                         lyric_handler.note_duration = predicted_duration
-                    elif isinstance(e, mp.Rest):
+                    elif isinstance(e, mp.Rest) and e.voice == lyric_voice:
                         if e.duration_type == "measure":
                             if lyric_handler.note_duration is not None:
                                 bar.append(lyric_handler)
@@ -695,11 +870,11 @@ class LilypondGenerator(mp.MuseScoreParser):
                             predicted_duration *= Fraction(parser_dots_fractions[e.dots])
                             lyric_handler.note_pitch = "r"
                             lyric_handler.note_duration = predicted_duration
-                    elif isinstance(e, mp.Tuplet):
+                    elif isinstance(e, mp.Tuplet) and e.voice == lyric_voice:
                         lyric_handler.tuplet = "\\tuplet %s/%s {" % (e.actual_notes, e.normal_notes)
                         if lyric_handler.note_pitch:
                             lyric_handler.tuplet_after = True
-                    elif isinstance(e, mp.EndTuplet):
+                    elif isinstance(e, mp.EndTuplet) and e.voice == lyric_voice:
                         if lyric_handler.note_pitch:
                             lyric_handler.tuplet_end = "}"
                             lyric_handler.tuplet_end_after = True
@@ -724,36 +899,36 @@ class LilypondGenerator(mp.MuseScoreParser):
         # add slurs for extender line and replace non text notes to rests
         extender_duration = None
         for bar in bars:
-            #print("|")
+            # print("|")
             for b in bar:
-                #print("  ", b)
+                # print("  ", b)
                 if b.text is not None:
                     if b.extender_duration:
                         extender_duration = b.extender_duration - b.note_duration
-                        #print(extender_duration, "adding (")
+                        # print(extender_duration, "adding (")
                         b.slur = "("
                 else:
                     if extender_duration is None:
                         b.note_pitch = "r"
                     else:
                         extender_duration -= b.note_duration
-                        #print(extender_duration, "calculating")
+                        # print(extender_duration, "calculating")
                         if extender_duration < 0:
                             extender_duration = None
-                            #print("adding )")
+                            # print("adding )")
                             b.slur = ")"
 
         string = []
 
-        #string.append("%%test%s%s = {" % (parser_name[staff.id], parser_name[no]))
-        #for bar in bars:
+        # string.append("%%test%s%s = {" % (parser_name[staff.id], parser_name[no]))
+        # for bar in bars:
         #    for b in bar:
         #        line = "%  "
         #        line += str(b)
         #        string.append(line)
         #    string.append("%  |")
-        #string.append("%}")
-        #string.append("")
+        # string.append("%}")
+        # string.append("")
 
         string.append("aligner%s%s = \\relative {" % (parser_name[staff.id], parser_name[no]))
         for bar in bars:
@@ -771,7 +946,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                 if b.tuplet_end and b.tuplet_end_after:
                     line += b.tuplet_end
                 line += " "
-                #print(b, line)
+                # print(b, line)
             line += "|"
             if len(line.strip()):
                 string.append(line)
@@ -791,17 +966,17 @@ class LilypondGenerator(mp.MuseScoreParser):
             if len(line.strip()):
                 string.append(line)
         string.append("}")
-        return string 
+        return string
 
     def get_tbox(self):
         string = []
 
-        #tbox_found = False
-        #for e in self.staffs[0].children:
+        # tbox_found = False
+        # for e in self.staffs[0].children:
         #    if isinstance(e, mp.TBox):
         #        tbox_found = True
         #        break
-        #if not tbox_found:
+        # if not tbox_found:
         #    return string
 
         stanzas = []
@@ -832,8 +1007,7 @@ class LilypondGenerator(mp.MuseScoreParser):
         string += lyrics
         string.append("  }")
         string.append("}")
-        return string        
-
+        return string
 
     def get_score(self):
         string = []
@@ -843,19 +1017,22 @@ class LilypondGenerator(mp.MuseScoreParser):
             string.append("    \\new ChordNames { \\jazzChords \\harmony%s }" % parser_name[staff.id])
             string.append("    \\new Staff {")
             string.append("        <<")
-            string.append("        \\new Voice { \\staff%s }" % parser_name[staff.id])
+            if self.staff_has_multiple_voices(staff):
+                string.append("        \\staff%s" % parser_name[staff.id])
+            else:
+                string.append("        \\new Voice { \\staff%s }" % parser_name[staff.id])
             for no in self.get_lyric_nos(staff):
-                string.append("        \\new NullVoice = \"aligner%s%s\" { \\aligner%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
-                string.append("        \\new Lyrics \\lyricsto \"aligner%s%s\" { \\lyric%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
+                string.append('        \\new NullVoice = "aligner%s%s" { \\aligner%s%s }' % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
+                string.append('        \\new Lyrics \\lyricsto "aligner%s%s" { \\lyric%s%s }' % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
             string.append("        >>")
             string.append("    }")
-            #string.append("    \\new Staff {")
-            #for no in self.get_lyric_nos(staff):
+            # string.append("    \\new Staff {")
+            # for no in self.get_lyric_nos(staff):
             #    string.append("        \\new Voice = \"aligner%s%s\" { \\transpose c c'' \\aligner%s%s }" % (parser_name[staff.id], parser_name[no], parser_name[staff.id], parser_name[no]))
-            #string.append("    }")
+            # string.append("    }")
         string.append("    >>")
         string.append("}")
-        return(string)
+        return string
 
     def get_file(self):
         string = []
@@ -866,9 +1043,12 @@ class LilypondGenerator(mp.MuseScoreParser):
         string += self.get_paper()
         string.append("")
         for s in self.staffs:
-            string += self.get_staff_start(s)
-            string += self.get_staff_data(s)
-            string += self.get_staff_end()
+            if self.staff_has_multiple_voices(s):
+                string += self.get_polyphonic_staff_data(s)
+            else:
+                string += self.get_staff_start(s)
+                string += self.get_staff_data(s)
+                string += self.get_staff_end()
             string.append("")
             string += self.get_harmony(s)
             string.append("")
@@ -878,19 +1058,38 @@ class LilypondGenerator(mp.MuseScoreParser):
         string += self.get_score()
         string.append("")
         string += self.get_tbox()
-        return(string)
+        return string
+
 
 @app.command()
-def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Optional[str] = None, custom_config: Optional[bool] = None, ordinal_number: Optional[int] = None, left_page: Optional[bool] = None, point_and_click: Optional[bool] = None, comment_tempo: Optional[bool] = None, one_page_breaking: Optional[bool] = None, titlex_suffix: Optional[str] = None):
+def main(
+    mscx_input: str,
+    ly_output: Optional[str] = None,
+    lilypond_version: Optional[str] = None,
+    custom_config: Optional[bool] = None,
+    ordinal_number: Optional[int] = None,
+    left_page: Optional[bool] = None,
+    point_and_click: Optional[bool] = None,
+    comment_tempo: Optional[bool] = None,
+    one_page_breaking: Optional[bool] = None,
+    titlex_suffix: Optional[str] = None,
+):
     print(f"Working on {mscx_input}")
     global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO, ONE_PAGE_BREAKING, TITLEX_SUFFIX
-    if lilypond_version is not None: LILYPOND_VERSION = lilypond_version
-    if custom_config is not None: CUSTOM_CONFIG = custom_config
-    if ordinal_number is not None: ORDINAL_NUMBER = ordinal_number
-    if left_page is not None: LEFT_PAGE = left_page
-    if point_and_click is not None: POINT_AND_CLICK = point_and_click
-    if comment_tempo is not None: COMMENT_TEMPO = comment_tempo
-    if one_page_breaking is not None: ONE_PAGE_BREAKING = one_page_breaking
+    if lilypond_version is not None:
+        LILYPOND_VERSION = lilypond_version
+    if custom_config is not None:
+        CUSTOM_CONFIG = custom_config
+    if ordinal_number is not None:
+        ORDINAL_NUMBER = ordinal_number
+    if left_page is not None:
+        LEFT_PAGE = left_page
+    if point_and_click is not None:
+        POINT_AND_CLICK = point_and_click
+    if comment_tempo is not None:
+        COMMENT_TEMPO = comment_tempo
+    if one_page_breaking is not None:
+        ONE_PAGE_BREAKING = one_page_breaking
     TITLEX_SUFFIX = titlex_suffix
     lg = LilypondGenerator(mscx_input)
     if ly_output is None:
@@ -898,6 +1097,7 @@ def main(mscx_input: str, ly_output: Optional[str] = None, lilypond_version: Opt
     else:
         with open(ly_output, "w") as f:
             f.writelines("\n".join(lg.get_file()))
+
 
 if __name__ == "__main__":
     app()

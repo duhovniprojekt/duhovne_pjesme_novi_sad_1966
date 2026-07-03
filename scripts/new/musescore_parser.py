@@ -3,20 +3,23 @@
 import sys
 from xml_parser import XmlParser
 from dataclasses import dataclass, field
-from pprint import pprint
 
 print_debug = False
+
 
 @dataclass
 class Base:
     def __post_init__(self):
-        if print_debug: print("%%", self)
+        if print_debug:
+            print("%%", self)
         pass
+
 
 @dataclass
 class Staff(Base):
     id: int
     children: list = field(default_factory=lambda: [])
+
 
 @dataclass
 class Measure(Base):
@@ -24,20 +27,24 @@ class Measure(Base):
     len: str
     children: list = field(default_factory=lambda: [])
 
+
 @dataclass
 class VBox(Base):
     style: str
     text: str
+
 
 @dataclass
 class TBox(Base):
     style: str
     text: str
 
+
 @dataclass
 class TimeSig(Base):
     sig_n: str
     sig_d: str
+
 
 @dataclass
 class Harmony(Base):
@@ -46,15 +53,27 @@ class Harmony(Base):
     name: str
     base: str
 
+
 @dataclass
 class Rest(Base):
     duration_type: str
     duration: str
     dots: str
+    voice: int = 1
+
 
 @dataclass
 class Location(Base):
     fractions: str
+    voice: int = 1
+
+
+@dataclass
+class Note(Base):
+    pitch: str
+    tpc: str
+    small: bool = False
+
 
 @dataclass
 class Chord(Base):
@@ -62,27 +81,36 @@ class Chord(Base):
     note_pitch: str
     note_tpc: str
     dots: str
+    voice: int = 1
+    small: bool = False
+    notes: list = field(default_factory=lambda: [])
+
 
 @dataclass
 class KeySig(Base):
     accidental: str
+
 
 @dataclass
 class Clef(Base):
     concert_clef_type: str
     transposing_clef_type: str
 
+
 @dataclass
 class RehearsalMark(Base):
     text: str
+
 
 @dataclass
 class BarLine(Base):
     subtype: str
 
+
 @dataclass
 class LayoutBreak(Base):
     subtype: str
+
 
 @dataclass
 class Lyrics(Base):
@@ -91,6 +119,8 @@ class Lyrics(Base):
     ticks: str
     ticks_f: str
     no: str
+    voice: int = 1
+
 
 @dataclass
 class ChordNoteSpanner(Base):
@@ -99,6 +129,8 @@ class ChordNoteSpanner(Base):
     prev_location_fractions: str
     next_location_measures: str
     prev_location_measures: str
+    voice: int = 1
+
 
 @dataclass
 class ChordSpanner(Base):
@@ -107,6 +139,8 @@ class ChordSpanner(Base):
     prev_location_fractions: str
     next_location_measures: str
     prev_location_measures: str
+    voice: int = 1
+
 
 @dataclass
 class VoltaSpanner(Base):
@@ -116,11 +150,13 @@ class VoltaSpanner(Base):
     next_location_measures: str
     prev_location_measures: str
 
+
 @dataclass
 class Tempo(Base):
     tempo: str
     text: str
     text_sym: str
+
 
 @dataclass
 class Tuplet(Base):
@@ -129,21 +165,36 @@ class Tuplet(Base):
     base_note: str
     number_style: str
     number_text: str
+    voice: int = 1
+
 
 @dataclass
 class EndTuplet(Base):
-    pass
+    voice: int = 1
+
 
 @dataclass
 class StartRepeat(Base):
     pass
 
+
 @dataclass
 class StaffText(Base):
     text: str
 
+
 class MuseScoreParser(XmlParser):
     staffs = []
+    current_voice = 1
+
+    def __init__(self, path):
+        self.staffs = []
+        self.current_voice = 1
+        super().__init__(path)
+
+    def on_node_exit(self):
+        if self.get_path() == "/museScore/Score/Staff/Measure/voice":
+            self.current_voice += 1
 
     def add_to_staff(self, e):
         self.staffs[-1].children.append(e)
@@ -164,6 +215,7 @@ class MuseScoreParser(XmlParser):
             attr = self.get_attributes(node)
             end_repeat = self.get_text_from_child(node, "endRepeat")
             measure_len = attr.get("len", "")
+            self.current_voice = 1
             self.add_to_staff(Measure(end_repeat, measure_len))
             return False
 
@@ -178,7 +230,7 @@ class MuseScoreParser(XmlParser):
             sig_d = self.get_text_from_child(node, "sigD")
             self.add_to_measure(TimeSig(sig_n, sig_d))
             return False
-           
+
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Harmony":
             root = self.get_text_from_child(node, "root")
             root_case = self.get_text_from_child(node, "rootCase")
@@ -191,12 +243,12 @@ class MuseScoreParser(XmlParser):
             duration_type = self.get_text_from_child(node, "durationType")
             duration = self.get_text_from_child(node, "duration")
             dots = self.get_text_from_child(node, "dots")
-            self.add_to_measure(Rest(duration_type, duration, dots))
+            self.add_to_measure(Rest(duration_type, duration, dots, self.current_voice))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/location":
             fractions = self.get_text_from_child(node, "fractions")
-            self.add_to_measure(Location(fractions))
+            self.add_to_measure(Location(fractions, self.current_voice))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Chord":
@@ -204,7 +256,18 @@ class MuseScoreParser(XmlParser):
             note_pitch = self.get_text_from_child(node, "Note/pitch")
             note_tpc = self.get_text_from_child(node, "Note/tpc")
             dots = self.get_text_from_child(node, "dots")
-            self.add_to_measure(Chord(duration_type, note_pitch, note_tpc, dots))
+            small = self.get_text_from_child(node, "small") == "1"
+            notes = []
+            for subnode in node.childNodes:
+                if subnode.nodeType == subnode.ELEMENT_NODE:
+                    if self.get_name(subnode) == "Note":
+                        pitch = self.get_text_from_child(subnode, "pitch")
+                        tpc = self.get_text_from_child(subnode, "tpc")
+                        note_small = self.get_text_from_child(subnode, "small") == "1"
+                        if note_small:
+                            small = True
+                        notes.append(Note(pitch, tpc, note_small))
+            self.add_to_measure(Chord(duration_type, note_pitch, note_tpc, dots, self.current_voice, small, notes))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/KeySig":
@@ -227,27 +290,25 @@ class MuseScoreParser(XmlParser):
             subtype = self.get_text_from_child(node, "subtype")
             self.add_to_measure(BarLine(subtype))
             return False
-        
-        
 
         if self.get_path() == "/museScore/Score/Staff/Measure/LayoutBreak":
             subtype = self.get_text_from_child(node, "subtype")
             self.add_to_measure(LayoutBreak(subtype))
             return False
-        
+
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Chord/Lyrics":
             text = self.get_text_from_child(node, "text")
             syllabic = self.get_text_from_child(node, "syllabic")
             ticks = self.get_text_from_child(node, "ticks")
             ticks_f = self.get_text_from_child(node, "ticks_f")
             no = self.get_text_from_child(node, "no")
-            self.add_to_measure(Lyrics(text, syllabic, ticks, ticks_f, no))
+            self.add_to_measure(Lyrics(text, syllabic, ticks, ticks_f, no, self.current_voice))
             return False
 
         if self.get_path() == "/museScore/Score/Part/Staff":
-            #attr = self.get_attributes(node)
-            #id = attr["id"]
-            #default_clef = self.get_text_from_child(node, "defaultClef")
+            # attr = self.get_attributes(node)
+            # id = attr["id"]
+            # default_clef = self.get_text_from_child(node, "defaultClef")
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Spanner":
@@ -269,7 +330,7 @@ class MuseScoreParser(XmlParser):
             prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
             next_location_measures = self.get_text_from_child(node, "next/location/measures")
             prev_location_measures = self.get_text_from_child(node, "prev/location/measures")
-            self.add_to_measure(ChordSpanner(attr_type, next_location_fractions, prev_location_fractions, next_location_measures, prev_location_measures))
+            self.add_to_measure(ChordSpanner(attr_type, next_location_fractions, prev_location_fractions, next_location_measures, prev_location_measures, self.current_voice))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Chord/Note/Spanner":
@@ -279,13 +340,13 @@ class MuseScoreParser(XmlParser):
             prev_location_fractions = self.get_text_from_child(node, "prev/location/fractions")
             next_location_measures = self.get_text_from_child(node, "next/location/measures")
             prev_location_measures = self.get_text_from_child(node, "prev/location/measures")
-            self.add_to_measure(ChordNoteSpanner(attr_type, next_location_fractions, prev_location_fractions, next_location_measures, prev_location_measures))
+            self.add_to_measure(ChordNoteSpanner(attr_type, next_location_fractions, prev_location_fractions, next_location_measures, prev_location_measures, self.current_voice))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/Tempo":
             tempo = self.get_text_from_child(node, "tempo")
-            text =self.get_text_from_child(node, "text")
-            text_sym = self.get_text_from_child(node,"text/sym")
+            text = self.get_text_from_child(node, "text")
+            text_sym = self.get_text_from_child(node, "text/sym")
             self.add_to_measure(Tempo(tempo, text, text_sym))
             return False
 
@@ -301,11 +362,11 @@ class MuseScoreParser(XmlParser):
             base_note = self.get_text_from_child(node, "baseNote")
             number_style = self.get_text_from_child(node, "Number/style")
             number_text = self.get_text_from_child(node, "Number/text")
-            self.add_to_measure(Tuplet(normal_notes, actual_notes, base_note, number_style, number_text))
+            self.add_to_measure(Tuplet(normal_notes, actual_notes, base_note, number_style, number_text, self.current_voice))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/voice/endTuplet":
-            self.add_to_measure(EndTuplet())
+            self.add_to_measure(EndTuplet(self.current_voice))
             return False
 
         if self.get_path() == "/museScore/Score/Staff/Measure/startRepeat":
@@ -317,10 +378,9 @@ class MuseScoreParser(XmlParser):
             self.add_to_measure(StaffText(text))
             return False
 
-
         return False
+
 
 if __name__ == "__main__":
     m = MuseScoreParser(sys.argv[1])
-    #pprint(m.staffs)
-
+    # pprint(m.staffs)
