@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import musescore_parser as mp
+import sys
 from fractions import Fraction
 from dataclasses import dataclass
 from typing import Optional
@@ -218,13 +219,10 @@ last_pitch = 60
 last_tpc = 14
 
 
-def get_pitch(pitch, tpc):
-    global last_pitch, last_tpc
+def format_relative_pitch(pitch, tpc, reference_pitch, reference_tpc):
     line = parser_tpc[tpc]
-    pitch_diff = int(pitch) - int(last_pitch)
-    tcp_diff = int(tpc) - int(last_tpc)
-    last_pitch = pitch
-    last_tpc = tpc
+    pitch_diff = int(pitch) - int(reference_pitch)
+    tcp_diff = int(tpc) - int(reference_tpc)
     # print("%%%% pitch_diff %s, last_pitch %s, pitch %s, tcp_diff %s" % (pitch_diff, last_pitch, pitch, tcp_diff))
 
     # TODO: clean up this mess
@@ -270,6 +268,14 @@ def get_pitch(pitch, tpc):
         else:
             # print("%% pitch_diff <<<")
             line += ",,,"
+    return line
+
+
+def get_pitch(pitch, tpc):
+    global last_pitch, last_tpc
+    line = format_relative_pitch(pitch, tpc, last_pitch, last_tpc)
+    last_pitch = pitch
+    last_tpc = tpc
     return line
 
 
@@ -400,6 +406,7 @@ class LilypondGenerator(mp.MuseScoreParser):
         return small_found and not normal_found
 
     def get_chord_pitch(self, chord):
+        global last_pitch, last_tpc
         notes = chord.notes
         if not notes:
             notes = [mp.Note(chord.note_pitch, chord.note_tpc)]
@@ -407,9 +414,15 @@ class LilypondGenerator(mp.MuseScoreParser):
             line = get_pitch(notes[0].pitch, notes[0].tpc)
         else:
             chord_notes = []
+            reference_pitch = last_pitch
+            reference_tpc = last_tpc
             for note in notes:
-                chord_notes.append(get_pitch(note.pitch, note.tpc))
+                chord_notes.append(format_relative_pitch(note.pitch, note.tpc, reference_pitch, reference_tpc))
+                reference_pitch = note.pitch
+                reference_tpc = note.tpc
             line = "<%s>" % " ".join(chord_notes)
+            last_pitch = notes[0].pitch
+            last_tpc = notes[0].tpc
         return line
 
     def append_staff_data_element(self, e, bar, string):
@@ -456,7 +469,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                 mark_variable_name = e.text.split("?")[1]
                 text = "\\%s" % mark_variable_name
             else:
-                text = "\\markMoj"
+                text = '\\markMoj "%s"' % e.text
             bar.append(text)
         elif isinstance(e, mp.Clef):
             if e.concert_clef_type:
@@ -673,7 +686,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                             mark_variable_name = e.text.split("?")[1]
                             text = "\\%s" % mark_variable_name
                         else:
-                            text = "\\markMoj"
+                            text = '\\markMoj "%s"' % e.text
                         bar.append(text)
                     elif isinstance(e, mp.Clef):
                         if e.concert_clef_type:
@@ -1076,7 +1089,7 @@ def main(
     one_page_breaking: Optional[bool] = None,
     titlex_suffix: Optional[str] = None,
 ):
-    print(f"Working on {mscx_input}")
+    print(f"Working on {mscx_input}", file=sys.stderr)
     global LILYPOND_VERSION, CUSTOM_CONFIG, ORDINAL_NUMBER, LEFT_PAGE, POINT_AND_CLICK, COMMENT_TEMPO, ONE_PAGE_BREAKING, TITLEX_SUFFIX
     if lilypond_version is not None:
         LILYPOND_VERSION = lilypond_version
