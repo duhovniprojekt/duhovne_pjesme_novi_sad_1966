@@ -470,7 +470,7 @@ class LilypondGenerator(mp.MuseScoreParser):
                 mark_variable_name = e.text.split("?")[1]
                 text = "\\%s" % mark_variable_name
             else:
-                text = '\\markMoj "%s"' % e.text
+                text = "\\markMoj"
             bar.append(text)
         elif isinstance(e, mp.Clef):
             if e.concert_clef_type:
@@ -682,12 +682,12 @@ class LilypondGenerator(mp.MuseScoreParser):
                     elif isinstance(e, mp.BarLine):
                         bar.append('\\bar "%s"' % parser_barline[e.subtype])
                     elif isinstance(e, mp.RehearsalMark):
-                        # text = "\\markMoj \"%s\"" % e.text
+                        # text = "\\markMoj"
                         if "?" in e.text:
                             mark_variable_name = e.text.split("?")[1]
                             text = "\\%s" % mark_variable_name
                         else:
-                            text = '\\markMoj "%s"' % e.text
+                            text = "\\markMoj"
                         bar.append(text)
                     elif isinstance(e, mp.Clef):
                         if e.concert_clef_type:
