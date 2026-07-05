@@ -427,7 +427,7 @@ class LilypondGenerator(mp.MuseScoreParser):
         return line
 
     def append_staff_data_element(self, e, bar, string):
-        has_break = False
+        break_command = None
         if isinstance(e, mp.TimeSig):
             string.append("  \\time %s/%s" % (e.sig_n, e.sig_d))
         elif isinstance(e, mp.Tempo):
@@ -481,7 +481,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                 bar.append(text)
         elif isinstance(e, mp.LayoutBreak):
             if e.subtype == "line":
-                has_break = True
+                break_command = "\\break"
+            elif e.subtype == "page":
+                break_command = "\\pageBreak"
         elif isinstance(e, mp.VoltaSpanner):
             if e.next_location_measures:
                 text = '\\set Score.repeatCommands = #\'((volta "%s"))' % e.begin_text
@@ -499,7 +501,7 @@ class LilypondGenerator(mp.MuseScoreParser):
             bar.append('\\bar "%s"' % parser_barline["startRepeat"])
         elif isinstance(e, mp.StaffText):
             bar.append("%%  %s" % e.text)
-        return has_break
+        return break_command
 
     def get_polyphonic_staff_data(self, staff):
         string = []
@@ -519,16 +521,18 @@ class LilypondGenerator(mp.MuseScoreParser):
                 if isinstance(sc, mp.Measure):
                     bar = []
                     line = "      " if is_small else "    "
-                    has_break = False
+                    break_command = None
                     for e in sc.children:
                         event_voice = getattr(e, "voice", None)
                         if event_voice is None:
                             if voice_number == 1:
-                                if self.append_staff_data_element(e, bar, string):
-                                    has_break = True
+                                element_break_command = self.append_staff_data_element(e, bar, string)
+                                if element_break_command:
+                                    break_command = element_break_command
                         elif event_voice == voice_number:
-                            if self.append_staff_data_element(e, bar, string):
-                                has_break = True
+                            element_break_command = self.append_staff_data_element(e, bar, string)
+                            if element_break_command:
+                                break_command = element_break_command
                     if sc.len and voice_number == 1:
                         line += "\\partial %s" % parser_fraction_to_duration[sc.len]
                         if is_small:
@@ -540,8 +544,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                         line += '\\bar "%s"' % parse_measure_end_repeat[sc.end_repeat]
                         line += " "
                     line += "|"
-                    if has_break and voice_number == 1:
-                        line += " \\break"
+                    if break_command and voice_number == 1:
+                        line += f" {break_command}"
                     string.append(line)
             if is_small:
                 string.append("    }")
@@ -631,7 +635,7 @@ class LilypondGenerator(mp.MuseScoreParser):
             if isinstance(sc, mp.Measure):
                 bar = []
                 line = "  "
-                has_break = False
+                break_command = None
                 for e in sc.children:
                     if isinstance(e, mp.TimeSig):
                         string.append("  \\time %s/%s" % (e.sig_n, e.sig_d))
@@ -698,7 +702,9 @@ class LilypondGenerator(mp.MuseScoreParser):
                             bar.append(text)
                     elif isinstance(e, mp.LayoutBreak):
                         if e.subtype == "line":
-                            has_break = True
+                            break_command = "\\break"
+                        elif e.subtype == "page":
+                            break_command = "\\pageBreak"
                     elif isinstance(e, mp.VoltaSpanner):
                         if e.next_location_measures:
                             text = '\\set Score.repeatCommands = #\'((volta "%s"))' % e.begin_text
@@ -726,8 +732,8 @@ class LilypondGenerator(mp.MuseScoreParser):
                     line += '\\bar "%s"' % parse_measure_end_repeat[sc.end_repeat]
                     line += " "
                 line += "|"
-                if has_break:
-                    line += " \\break"
+                if break_command:
+                    line += f" {break_command}"
                 string.append(line)
         if small_music_open:
             string.append("  }")
